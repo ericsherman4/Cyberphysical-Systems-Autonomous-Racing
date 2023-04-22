@@ -45,17 +45,17 @@ policies, either expressed or implied, of the FreeBSD Project.
 
 #include <stdint.h>
 #include "msp.h"
-#include "Clock.h"
-#include "I2CB1.h"
-#include "CortexM.h"
-#include "LPF.h"
-#include "opt3101.h"
-#include "LaunchPad.h"
-#include "Bump.h"
-#include "Motor.h"
-#include "UART0.h"
-#include "SSD1306.h"
-#include "FFT.h"
+#include "../inc/Clock.h"
+#include "../inc/I2CB1.h"
+#include "../inc/CortexM.h"
+#include "../inc/LPF.h"
+#include "../inc/opt3101.h"
+#include "../inc/LaunchPad.h"
+#include "../inc/Bump.h"
+#include "../inc/Motor.h"
+#include "../inc/UART0.h"
+#include "../inc/SSD1306.h"
+#include "../inc/FFT.h"
 // Select one of the following three output possibilities
 // define USENOKIA
 #define USEOLED 1
@@ -239,7 +239,7 @@ int32_t Left(int32_t left){
   return (1247*left)/2048 + 22;
 }
 
-void main(void){ // main3interrupt implementation
+void mainUNO(void){ // main3interrupt implementation
   int i = 0;
   uint32_t channel = 1;
   DisableInterrupts();
@@ -448,12 +448,81 @@ int Program21_1(void){ //Program21_1(void){ // example program 21.1, RSLK1.1
     else s = 1;
   }
 }
+// assumes track is 500mm
 int32_t Mode=0; // 0 stop, 1 run
+int32_t Error;
+int32_t Ki=1;  // integral controller gain
+int32_t Kp=4;  // proportional controller gain //was 4
 int32_t UR, UL;  // PWM duty 0 to 14,998
-#define PWMNOMINAL 2500
+
+#define TOOCLOSE 200 //was 200
+#define DESIRED 250 //was 250
+int32_t SetPoint = 250; // mm //was 250
+int32_t LeftDistance,CenterDistance,RightDistance; // mm
+#define TOOFAR 400 // was 400
+
+#define PWMNOMINAL 5000 // was 2500
+#define SWING 2000 //was 1000
+#define PWMMIN (PWMNOMINAL-SWING)
+#define PWMMAX (PWMNOMINAL+SWING)
 void Controller(void){ // runs at 100 Hz
-  // write something for Lab 21
+  if(Mode){
+    if((LeftDistance>DESIRED)&&(RightDistance>DESIRED)){
+      SetPoint = (LeftDistance+RightDistance)/2;
+    }else{
+      SetPoint = DESIRED;
+    }
+    if(LeftDistance < RightDistance ){
+      Error = LeftDistance-SetPoint;
+    }else {
+      Error = SetPoint-RightDistance;
+    }
+ //   UR = UR + Ki*Error;      // adjust right motor
+    UR = PWMNOMINAL+Kp*Error; // proportional control
+    UL = PWMNOMINAL-Kp*Error; // proportional control
+    if(UR < (PWMNOMINAL-SWING)) UR = PWMNOMINAL-SWING; // 3,000 to 7,000
+    if(UR > (PWMNOMINAL+SWING)) UR = PWMNOMINAL+SWING;
+    if(UL < (PWMNOMINAL-SWING)) UL = PWMNOMINAL-SWING; // 3,000 to 7,000
+    if(UL > (PWMNOMINAL+SWING)) UL = PWMNOMINAL+SWING;
+    Motor_Forward(UL,UR);
+
+  }
 }
+
+void Controller_Right(void){ // runs at 100 Hz
+  if(Mode){
+    if((RightDistance>DESIRED)){
+      SetPoint = (RightDistance)/2;
+    }else{
+      SetPoint = DESIRED;
+    }
+    /*if(LeftDistance < RightDistance ){
+      Error = LeftDistance-SetPoint;
+    }else {
+      Error = SetPoint-RightDistance;
+    }*/
+
+    Error = SetPoint-RightDistance;
+    //UR = UR + Ki*Error;      // adjust right motor
+    UR = PWMNOMINAL+Kp*Error; // proportional control
+    UR = UR + Ki*Error;      // adjust right motor
+    UL = PWMNOMINAL-Kp*Error; // proportional control
+    if(UR < (PWMNOMINAL-SWING)) UR = PWMNOMINAL-SWING; // 3,000 to 7,000
+    if(UR > (PWMNOMINAL+SWING)) UR = PWMNOMINAL+SWING;
+    if(UL < (PWMNOMINAL-SWING)) UL = PWMNOMINAL-SWING; // 3,000 to 7,000
+    if(UL > (PWMNOMINAL+SWING)) UL = PWMNOMINAL+SWING;
+
+    //turns left if the center measurement and right measurement is small enough that we will hit the wall if we don't turn
+    if((RightDistance<250) && (CenterDistance <250)){
+        UL = 0;
+        UR = PWMNOMINAL;
+    }
+
+    Motor_Forward(UL,UR);
+
+  }
+}
+
 void Pause(void){int i;
   while(Bump_Read()){ // wait for release
     Clock_Delay1ms(200); LaunchPad_Output(0); // off
@@ -477,8 +546,91 @@ void Pause(void){int i;
 
 }
 
-void wallFollow(void){ // wallFollow wall following implementation
-   // write something for Lab 21
+void main(void){ // wallFollow wall following implementation
+  int i = 0;
+  uint32_t channel = 1;
+  DisableInterrupts();
+  Clock_Init48MHz();
+  Bump_Init();
+  LaunchPad_Init(); // built-in switches and LEDs
+  Motor_Stop(); // initialize and stop
+  Mode = 0;
+  I2CB1_Init(30); // baud rate = 12MHz/30=400kHz
+  Init();
+  Clear();
+  OutString("OPT3101");
+  SetCursor(0, 1);
+  OutString("L=");
+  SetCursor(0, 2);
+  OutString("C=");
+  SetCursor(0, 3);
+  OutString("R=");
+  SetCursor(0, 4);
+  OutString("Wall follow");
+  SetCursor(0, 5);
+  OutString("SP=");
+  SetCursor(0, 6);
+  OutString("Er=");
+  SetCursor(0, 7);
+  OutString("U =");
+  OPT3101_Init();
+  OPT3101_Setup();
+  OPT3101_CalibrateInternalCrosstalk();
+  OPT3101_ArmInterrupts(&TxChannel, Distances, Amplitudes);
+  TxChannel = 3;
+  OPT3101_StartMeasurementChannel(channel);
+  LPF_Init(100,8);
+  LPF_Init2(100,8);
+  LPF_Init3(100,8);
+  UR = UL = PWMNOMINAL; //initial power
+  Pause();
+  EnableInterrupts();
+  while(1){
+    if(Bump_Read()){ // collision
+      Mode = 0;
+      Motor_Stop();
+      Pause();
+    }
+    if(TxChannel <= 2){ // 0,1,2 means new data
+      if(TxChannel==0){
+        if(Amplitudes[0] > 1000){
+          LeftDistance = FilteredDistances[0] = Left(LPF_Calc(Distances[0]));
+        }else{
+          LeftDistance = FilteredDistances[0] = 500;
+        }
+      }else if(TxChannel==1){
+        if(Amplitudes[1] > 1000){
+          CenterDistance = FilteredDistances[1] = LPF_Calc2(Distances[1]);
+        }else{
+          CenterDistance = FilteredDistances[1] = 500;
+        }
+      }else {
+        if(Amplitudes[2] > 1000){
+          RightDistance = FilteredDistances[2] = Right(LPF_Calc3(Distances[2]));
+        }else{
+          RightDistance = FilteredDistances[2] = 500;
+        }
+      }
+      SetCursor(2, TxChannel+1);
+      OutUDec(FilteredDistances[TxChannel]); OutChar(','); OutUDec(Amplitudes[TxChannel]);
+      TxChannel = 3; // 3 means no data
+      channel = (channel+1)%3;
+      OPT3101_StartMeasurementChannel(channel);
+      i = i + 1;
+    }
+    Controller_Right();
+    if(i >= 100){
+      i = 0;
+      SetCursor(3, 5);
+      OutUDec(SetPoint);
+      SetCursor(3, 6);
+      OutSDec(Error);
+      SetCursor(3, 7);
+      OutUDec(UL); OutChar(','); OutUDec(UR);
+    }
+
+    WaitForInterrupt();
+  }
 }
 // MSP432 memory limited to q=11, N=2048
 #define q   8       /* for 2^8 points */

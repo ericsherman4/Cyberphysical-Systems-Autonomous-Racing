@@ -5,6 +5,8 @@
 
 # Custom Git Ignore
 Debug/
+.jxbrowser.userdata/*
+.metadata/*
 
 
 # User-specific files
