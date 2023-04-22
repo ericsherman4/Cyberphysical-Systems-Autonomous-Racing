@@ -14,7 +14,7 @@
                 <choice Name="SWD Mode - Aux COM port is target TDO pin" value="nothing"/>
             </property>
             <platform XML_version="1.2" id="platform_0">
-                <instance XML_version="1.2" desc="MSP432E401Y" href="devices/msp432e401y.xml" id="MSP432E401Y" xml="msp432e401y.xml" xmlpath="devices"/>
+                <instance XML_version="1.2" desc="MSP432P401R" href="devices/msp432p401r.xml" id="MSP432P401R" xml="msp432p401r.xml" xmlpath="devices"/>
             </platform>
         </connection>
     </configuration>
