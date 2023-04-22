@@ -71,7 +71,9 @@ void Odometry_Init(int32_t initx, int32_t inity, int32_t initTheta){
   Roboty = inity;
   Robottheta = initTheta;
 }
-void Odometry_Update(int32_t LCount, int32_t RCount){int32_t L2; int32_t absLr,absRr;
+void Odometry_Update(int32_t LCount, int32_t RCount){
+  int32_t L2; 
+  int32_t absLr,absRr;
   Lr = (LCount*C)/N;      // 0.0001cm
   Rr = (RCount*C)/N;      // 0.0001cm
   if(Lr>=0){
