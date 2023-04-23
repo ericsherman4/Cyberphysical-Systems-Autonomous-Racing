@@ -69,7 +69,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define XYTOLERANCE 10000      ///< tolerance in x,y goal seeking, 1 cm
 #define THETATOLERANCE (4096/90)  ///< tolerance in angle goal seeking, 1 deg
 #define MOTORFAST 5000
-#define MOTORSLOW 4000
+#define MOTORSLOW 3300
 
 #define ODO_INIT_XPOS 0 
 #define ODO_INIT_YPOS 0
@@ -300,9 +300,18 @@ uint32_t ForwardUntilYStatus(void);
  * This routine will start the command, but return immediately
  * @param thedesiredTh desired theta position in units of 2*pi/16384 radians
  * @return none
- * @brief start going Forward Until Y
+ * @brief start going Forward Until theta
  */
 void SoftLeftUntilThStart(int32_t thedesiredTh);
+
+/**
+ * Odometry command to soft right until theta goal has been reached.
+ * This routine will start the command, but return immediately
+ * @param thedesiredTh desired theta position in units of 2*pi/16384 radians
+ * @return none
+ * @brief start going Forward Until theta
+ */
+void SoftRightUntilThStart(int32_t thedesiredTh);
 
 /**
  * Odometry command to check status of soft left until theta  command.

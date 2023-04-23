@@ -234,13 +234,13 @@ void SoftLeft(void){
   Action = SOFTLEFT;
   Blinker_Output(FR_LEFT+BK_LEFT);
   Display();
-  Motor_Forward(0,MOTORSLOW);  // left
+  Motor_Forward(MOTORSLOW,MOTORFAST);  // left
 }
 void SoftRight(void){
   Action = SOFTRIGHT;
   Blinker_Output(FR_RGHT+BK_RGHT);
   Display();
-  Motor_Forward(MOTORSLOW,0);  // right
+  Motor_Forward(MOTORFAST,MOTORSLOW);  // right
 }
 uint32_t ForwardUntilCrash(void){uint32_t data;
   Forward();
@@ -397,6 +397,17 @@ void SoftLeftUntilThStart(int32_t thedesiredTh){
   Goal = LEFTTOTH;
   SoftLeft();
 }
+
+void SoftRightUntilThStart(int32_t thedesiredTh)
+{
+  desiredTh = thedesiredTh;
+  badCount = 10;
+  lastgoal=abs(thedesiredTh-MyTheta);  // in 2*pi/16384 radians
+  Goal = RIGHTTOTH;
+  SoftRight();
+}
+
+
 // true if done or error
 // false if still running ok
 uint32_t  ForwardUntilThStatus(void){uint32_t data;

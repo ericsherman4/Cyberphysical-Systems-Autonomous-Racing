@@ -28,6 +28,7 @@ uint32_t Amplitudes[3];
 uint32_t TxChannel;
 uint32_t StartTime;
 uint32_t TimeToConvert; // in msec
+uint32_t channel = 1;
 
 bool pollDistanceSensor(void)
 {
@@ -44,57 +45,185 @@ bool pollDistanceSensor(void)
 void SysTick_Handler()
 {
     UpdatePosition();
-//    if(--count == 0)
-//    {
-//        count = COUNT_RESET;
-//        state = !state;
-//        if(state)
-//            LaunchPad_Output(PINK);
-//        else
-//            LaunchPad_Output(GREEN);
-//    }
 
+    if(pollDistanceSensor())
+    {
+
+        channel = (channel+1)%3;
+        OPT3101_StartMeasurementChannel(channel);
+
+    }
 }
 
 // https://coder-tronics.com/state-machine-tutorial-pt2/
-enum states { S_HALLWAY1_STR, S_HALLWAY1_ALIGN, S_HALLWAY1TO2, S_NAME3};
-uint8_t curr_state = S_HALLWAY1_STR;
-int32_t target_heading = 0;
+typedef enum states {
+    BEGIN,
+    S_HALLWAY1_STR, 
+    S_HALLWAY1_ALIGN, 
+    S_HALLWAY1_TO2,
+    S_HALLWAY2_STR,
+    S_HALLWAY2_ALIGN, 
+    S_STOP
+} states_e;
 
-#warning "JUST GO BETWEEN STRAIGHT AND THEN DRIVING UNTIL HEADING 0"
+states_e curr_state = BEGIN;
+int32_t target_heading = 0;
+uint32_t command_status = 0;
+
+void upon_entry(states_e state)
+{
+    switch(state)
+    {
+        case S_HALLWAY1_STR:
+            LaunchPad_Output(RED);
+            ForwardUntilXStart(DISTANCE_1FT);
+            break;
+        case S_HALLWAY1_ALIGN:
+            LaunchPad_Output(BLUE);
+            // turning left, mytheta goes up so if mytheta > target, then we are facing too far to the left
+            // so we want to turn to the right
+            if(MyTheta > target_heading)
+            {
+                // turn right
+                SoftRightUntilThStart(target_heading);
+            }
+            else
+            {
+                // turn left
+                SoftLeftUntilThStart(target_heading);
+            }
+            break;
+        case S_STOP:
+            Motor_Stop();
+            LaunchPad_Output(GREEN);
+            break;
+    }
+}
+
+void upon_exit(states_e state)
+{
+
+}
+
+void set_target_heading(states_e next_state)
+{
+    // set target heading
+    switch(next_state)
+    {
+        case S_HALLWAY1_STR:
+        case S_HALLWAY1_ALIGN:
+            target_heading = 0;
+            break;
+        //TODO: finish
+    }
+}
+
+
+#define NX_STATE(val) next_state=(val); break;
 
 void StateMachine_Main_Run()
 {
     // if nothing happens, stay in state
-    int next_state = curr_state;
+    states_e next_state = curr_state;
     
     switch(curr_state)
     {
+        case BEGIN:
+            // default switch from begin to hallway1 straight so you can run its entry command
+            NX_STATE(S_HALLWAY1_STR);
+        
         case S_HALLWAY1_STR:
-            // go straight for x amount
-            // hug left wall
-            if(Distances[1] < 400)
+            
+            // check for obstacles
+            if(Distances[1] < 300)
             {
-                //run A0 machine
+                LaunchPad_LED(1);
+            }
+            else
+            {
+                LaunchPad_LED(0);
             }
 
-            #warning "make sure this variable is updating correctly"
-            if(MyX > HALLWAY1_X_MIN && MyX < HALLWAY1_X_MAX)
+            // Check on X loc
+            if (MyX > (DISTANCE_1FT*10))
             {
-                next_state = S_HALLWAY1TO2;
+                Motor_Stop();
+                NX_STATE(S_STOP);
+                
             }
 
-            break;
+            // check on status of going straight
+            command_status = ForwardUntilXStatus();
+            
+            if(command_status == 1)
+            {
+                // success
+                // Motor_Stop();
+                // check if heading is too far off course
+                if(MyTheta > 2000 || MyTheta < -2000)
+                {
+                    NX_STATE(S_HALLWAY1_ALIGN);
+                }
+                else
+                {
+                    //stay in state 
+                    // call entry functionality again to restart state
+                    upon_entry(curr_state);
+                    NX_STATE(curr_state);
+                }
+            }
+            else if(command_status > 1)
+            {
+                // error occurred 
+                // Motor_Stop();
+                NX_STATE(S_HALLWAY1_ALIGN);
+            }
+            else
+            {
+                // status is 0 meaning it is still running
+                NX_STATE(curr_state);
+            }
+            
 
-        case S_HALLWAY1TO2:
+        case S_HALLWAY1_ALIGN:
+            // check on turning status
+            command_status = ForwardUntilThStatus();
 
-            break;
+            if(command_status == 1)
+            {
+                //success, we are realigned, go back to driving forward
+//                Motor_Stop();
+                NX_STATE(S_HALLWAY1_STR);
+            }
+            else if(command_status > 1)
+            {
+                // failed. rerun the state in case we turned to far.
+                // heading angles will redetermine what direction to turn in
+//                Motor_Stop();
+                upon_entry(curr_state);
+                NX_STATE(curr_state);
+            }
+            else
+            {
+                //status is 0, still turning
+                NX_STATE(curr_state);
+            }
+
+
+        case S_STOP:
+            // dead hang
+            NX_STATE(curr_state);
     }
 
-    // Some code here if entry or exit functions need to be called.
+    
+    if(next_state !=  curr_state)
+    {
+        set_target_heading(next_state);
+        upon_entry(curr_state);
+        upon_entry(next_state);
+    }
     
     curr_state = next_state;
-
 }
 
 void StateMachine_AO_Run()
@@ -107,14 +236,8 @@ void StateMachine_AO_Run()
 void main(void)
 {
 
-    //next step, PID to go straight
-    // thing is we cant always rely on perfectly straight heading
-    // so we will need the walls to correct us sometimes,
-    // in certain hallways we wanna use certain walls though
-
-
     Clock_Init48MHz();
-    uint32_t channel = 1;
+    
     Distance_Sensor_Init(1);
 
     Motor_Init();
@@ -130,50 +253,11 @@ void main(void)
     SysTick_Init_Ints(ODO_UPDATE_PERIOD, 4);
     EnableInterrupts(); //used for tach i think
 
-    ForwardUntilXStart(DISTANCE_1FT);
-
-    //while its still running
-    uint32_t result = 0;
-    while(!result)
-    {
-        result = ForwardUntilXStatus();
-        
-        if(pollDistanceSensor())
-        {
-
-            channel = (channel+1)%3;
-            OPT3101_StartMeasurementChannel(channel);
-
-            if(Distances[0] < 700)
-            {
-                Motor_Forward(MOTORFAST-2000, MOTORFAST +2000);
-                LaunchPad_Output(GREEN);
-            }
-            else if(Distances[2] < 700)
-            {
-                Motor_Forward(MOTORFAST+2000, MOTORFAST - 2000);
-                LaunchPad_Output(PINK);
-            }
-            else{
-                Motor_Forward(MOTORFAST, MOTORFAST);
-                LaunchPad_Output(BLUE);
-            }
-        }
-    }
-
-    if(result == 1)
-    {
-        LaunchPad_LED(1);
-    }
-
-
-
-    Motor_Stop();
-
 
     while(1)
     {
         // Systick handler is currently running
+        StateMachine_Main_Run();
 
 
     }
