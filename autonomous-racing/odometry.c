@@ -242,14 +242,19 @@ void SoftRight(void){
   Display();
   Motor_Forward(MOTORFAST,MOTORSLOW);  // right
 }
-uint32_t ForwardUntilCrash(void){uint32_t data;
+
+
+uint32_t ForwardUntilCrash(void){
+  uint32_t data;
   Forward();
   do{// wait for touch
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
   }while(data==0);
   return data; // reason for stopping
 }
-uint32_t ForwardUntilX(int32_t desiredX){uint32_t data;
+
+uint32_t ForwardUntilX(int32_t desiredX){
+  uint32_t data;
   int32_t goal;  // in 0.0001cm
   int32_t lastgoal=abs(desiredX-MyX);  // in 0.0001cm
   int32_t badCount = 10;
@@ -269,6 +274,8 @@ uint32_t ForwardUntilX(int32_t desiredX){uint32_t data;
   Display();
   return data; // reason for stopping, 0 means success
 }
+
+
 int32_t goal;      // in 0.0001cm
 int32_t lastgoal;  // in 0.0001cm
 int32_t badCount;
@@ -407,6 +414,23 @@ void SoftRightUntilThStart(int32_t thedesiredTh)
   SoftRight();
 }
 
+
+void HardLeftUntilThStart(int32_t thedesiredTh){
+  desiredTh = thedesiredTh;
+  badCount = 10;
+  lastgoal=abs(thedesiredTh-MyTheta);  // in 2*pi/16384 radians
+  Goal = LEFTTOTH;
+  HardLeft();
+}
+
+void HardRightUntilThStart(int32_t thedesiredTh)
+{
+  desiredTh = thedesiredTh;
+  badCount = 10;
+  lastgoal=abs(thedesiredTh-MyTheta);  // in 2*pi/16384 radians
+  Goal = RIGHTTOTH;
+  HardRight();
+}
 
 // true if done or error
 // false if still running ok

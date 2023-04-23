@@ -75,7 +75,7 @@ void upon_entry(states_e state)
     switch(state)
     {
         case S_HALLWAY1_STR:
-            LaunchPad_Output(RED);
+            LaunchPad_Output(GREEN);
             ForwardUntilXStart(DISTANCE_1FT);
             break;
         case S_HALLWAY1_ALIGN:
@@ -93,9 +93,30 @@ void upon_entry(states_e state)
                 SoftLeftUntilThStart(target_heading);
             }
             break;
-        case S_STOP:
-            Motor_Stop();
+        case S_HALLWAY1_TO2:
+            LaunchPad_Output(PINK);
+            HardRightUntilThStart(target_heading);
+            break;
+        case S_HALLWAY2_ALIGN:
+            LaunchPad_Output(BLUE);
+            if(MyTheta > target_heading)
+            {
+                // turn right
+                SoftRightUntilThStart(target_heading);
+            }
+            else
+            {
+                // turn left
+                SoftLeftUntilThStart(target_heading);
+            }
+            break;
+        case S_HALLWAY2_STR:
             LaunchPad_Output(GREEN);
+            ForwardUntilYStart(DISTANCE_1FT);
+            break;
+        case S_STOP:
+            LaunchPad_Output(RED);
+            Motor_Stop();
             break;
     }
 }
@@ -114,10 +135,13 @@ void set_target_heading(states_e next_state)
         case S_HALLWAY1_ALIGN:
             target_heading = 0;
             break;
+        case S_HALLWAY1_TO2:
+        case S_HALLWAY2_STR:
+        case S_HALLWAY2_ALIGN:
+            target_heading = -(16384 >> 2); //equiv to divide by 4
         //TODO: finish
     }
 }
-
 
 #define NX_STATE(val) next_state=(val); break;
 
@@ -145,11 +169,10 @@ void StateMachine_Main_Run()
             }
 
             // Check on X loc
-            if (MyX > (DISTANCE_1FT*10))
+            if (MyX > (DISTANCE_1FT*90))
             {
                 Motor_Stop();
-                NX_STATE(S_STOP);
-                
+                NX_STATE(S_HALLWAY1_TO2);
             }
 
             // check on status of going straight
@@ -160,7 +183,7 @@ void StateMachine_Main_Run()
                 // success
                 // Motor_Stop();
                 // check if heading is too far off course
-                if(MyTheta > 2000 || MyTheta < -2000)
+                if(MyTheta > (2000 + target_heading) || MyTheta < (target_heading - 2000))
                 {
                     NX_STATE(S_HALLWAY1_ALIGN);
                 }
@@ -192,14 +215,12 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 //success, we are realigned, go back to driving forward
-//                Motor_Stop();
                 NX_STATE(S_HALLWAY1_STR);
             }
             else if(command_status > 1)
             {
                 // failed. rerun the state in case we turned to far.
                 // heading angles will redetermine what direction to turn in
-//                Motor_Stop();
                 upon_entry(curr_state);
                 NX_STATE(curr_state);
             }
@@ -209,6 +230,96 @@ void StateMachine_Main_Run()
                 NX_STATE(curr_state);
             }
 
+        case S_HALLWAY1_TO2:
+            command_status = ForwardUntilThStatus();
+
+            if(command_status == 1)
+            {
+                //sucess
+                Motor_Stop();
+                NX_STATE(S_HALLWAY2_STR);
+            }
+            else if(command_status > 1)
+            {
+                // failed might have turned too far
+                // go to align
+                NX_STATE(S_HALLWAY2_ALIGN);
+            }
+            else
+            {
+                //still running, stay in state
+                NX_STATE(curr_state);
+            }
+
+        case S_HALLWAY2_ALIGN:
+            command_status = ForwardUntilThStatus();
+            if(command_status == 1)
+            {
+                //sucess, we are aligned
+                NX_STATE(S_HALLWAY2_STR);
+            }
+            else if(command_status > 1)
+            {
+                // failed, align again
+                upon_entry(curr_state);
+                NX_STATE(curr_state);
+            }
+            else
+            {
+                //still running
+                NX_STATE(curr_state);
+            }
+
+        case S_HALLWAY2_STR:
+
+            // check for obstacles
+            if(Distances[1] < 300)
+            {
+                LaunchPad_LED(1);
+            }
+            else
+            {
+                LaunchPad_LED(0);
+            }
+
+            // Check on Y loc
+            if (MyY < (-(DISTANCE_1FT*3)))
+            {
+                Motor_Stop();
+                NX_STATE(S_STOP);
+            }
+
+            // check on status of going straight
+            command_status = ForwardUntilYStatus();
+            
+            if(command_status == 1)
+            {
+                // success
+                // Motor_Stop();
+                // check if heading is too far off course
+                if(MyTheta > (2000 + target_heading) || MyTheta < (target_heading - 2000))
+                {
+                    NX_STATE(S_HALLWAY2_ALIGN);
+                }
+                else
+                {
+                    //stay in state 
+                    // call entry functionality again to restart state
+                    upon_entry(curr_state);
+                    NX_STATE(curr_state);
+                }
+            }
+            else if(command_status > 1)
+            {
+                // error occurred 
+                // Motor_Stop();
+                NX_STATE(S_HALLWAY2_ALIGN);
+            }
+            else
+            {
+                // status is 0 meaning it is still running
+                NX_STATE(curr_state);
+            }
 
         case S_STOP:
             // dead hang

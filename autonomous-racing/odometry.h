@@ -313,8 +313,12 @@ void SoftLeftUntilThStart(int32_t thedesiredTh);
  */
 void SoftRightUntilThStart(int32_t thedesiredTh);
 
+void HardLeftUntilThStart(int32_t thedesiredTh);
+
+void HardRightUntilThStart(int32_t thedesiredTh);
+
 /**
- * Odometry command to check status of soft left until theta  command.
+ * Odometry command to check status of soft left until theta or soft right or hard right or hard left command.
  * Assumes SoftLeftUntilThStart has been issued
  * @param none
  * @return true if done or error, false if still running ok

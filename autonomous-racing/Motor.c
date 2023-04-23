@@ -131,8 +131,8 @@ void Motor_Right(uint16_t leftDuty, uint16_t rightDuty){
     // set the motor direction
     P3->OUT |= 0xC0; // take motors out of sleep
 
-    P5->OUT &= ~0x20; // set left motor phase to forward (0)
-    P5->OUT |= 0x10; // set right motor phase to backward (1)
+    P5->OUT |= 0x20; // set left motor phase to forward
+    P5->OUT &= ~0x10; // set right motor phase to backward
 
     PWM_Init34(PWM_PERIOD_100_HZ, rightDuty, leftDuty);
 
@@ -153,8 +153,8 @@ void Motor_Left(uint16_t leftDuty, uint16_t rightDuty){
     // set the motor direction
     P3->OUT |= 0xC0; // take motors out of sleep
 
-    P5->OUT |= 0x20; // set left motor phase to forward (0)
-    P5->OUT &= ~0x10; // set right motor phase to backward (1)
+    P5->OUT &= ~0x20; // set left motor phase to backward
+    P5->OUT |= 0x10; // set right motor phase to forward
 
     PWM_Init34(PWM_PERIOD_100_HZ, rightDuty, leftDuty);
 
