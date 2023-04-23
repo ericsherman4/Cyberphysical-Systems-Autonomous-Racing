@@ -34,6 +34,15 @@
 
 static uint32_t reg08, reg09;
 
+void Distance_Sensor_Init(uint8_t start_channel)
+{
+   I2CB1_Init(30);
+   OPT3101_Init();
+   OPT3101_Setup();
+   OPT3101_CalibrateInternalCrosstalk();
+   OPT3101_StartMeasurementChannel(start_channel);
+}
+
 uint32_t OPT3101_ReadRegister(uint8_t address){
   uint8_t buffer[3];
   I2CB1_Send(I2C_ADDRESS, &address, 1);

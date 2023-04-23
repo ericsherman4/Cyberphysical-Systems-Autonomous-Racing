@@ -11,18 +11,10 @@
 #include "I2CB1.h"
 #include "Blinker.h"
 #include "opt3101.h"
+#include "pid.h"
 
 
-#define ODO_INIT_XPOS 0 
-#define ODO_INIT_YPOS 0
-#define ODO_INIT_HEADING 0
-#define DISTANCE_1FT 304800
 
-// 1/48/10^6*700000 is 15ms update
-// 1/48/10^6*1200000 is 25ms update
-//1/48/10^6*50000000 is 1.04s so divide by 10 is 100ms
-#define ODO_UPDATE_PERIOD 1200000
-#warning "see if wheel counts are between 5 and 20"
 
 #define COUNT_RESET 50
 
@@ -47,23 +39,7 @@ bool pollDistanceSensor(void)
   return false;
 }
 
-void UartSetCur(uint8_t newX, uint8_t newY)
-{
-  if(newX == 6){
-    UART0_OutString("\n\rTxChannel= ");
-    UART0_OutUDec(newY-1);
-    UART0_OutString(" Distance= ");
-  }else{
-    UART0_OutString("\n\r");
-  }
-}
-void UartClear(void){UART0_OutString("\n\r");};
-#define Init UART0_Init
-#define Clear UartClear
-#define SetCursor UartSetCur
-#define OutString UART0_OutString
-#define OutChar UART0_OutChar
-#define OutUDec UART0_OutUDec
+
 
 void SysTick_Handler()
 {
@@ -80,52 +56,81 @@ void SysTick_Handler()
 
 }
 
-void Distance_Sensor_Init(uint32_t start_channel)
+// https://coder-tronics.com/state-machine-tutorial-pt2/
+enum states { S_HALLWAY1_STR, S_HALLWAY1_ALIGN, S_HALLWAY1TO2, S_NAME3};
+uint8_t curr_state = S_HALLWAY1_STR;
+int32_t target_heading = 0;
+
+#warning "JUST GO BETWEEN STRAIGHT AND THEN DRIVING UNTIL HEADING 0"
+
+void StateMachine_Main_Run()
 {
-    I2CB1_Init(30);
-    Init();
-    Clear();
-    OutString("OPT3101");
-    SetCursor(0, 1);
-    OutString("Left =");
-    SetCursor(0, 2);
-    OutString("Centr=");
-    SetCursor(0, 3);
-    OutString("Right=");
-    SetCursor(0, 4);
-    OutString("Busy-wait");
-    OPT3101_Init();
-    OPT3101_Setup();
-    OPT3101_CalibrateInternalCrosstalk();
-    OPT3101_StartMeasurementChannel(start_channel);
+    // if nothing happens, stay in state
+    int next_state = curr_state;
+    
+    switch(curr_state)
+    {
+        case S_HALLWAY1_STR:
+            // go straight for x amount
+            // hug left wall
+            if(Distances[1] < 400)
+            {
+                //run A0 machine
+            }
+
+            #warning "make sure this variable is updating correctly"
+            if(MyX > HALLWAY1_X_MIN && MyX < HALLWAY1_X_MAX)
+            {
+                next_state = S_HALLWAY1TO2;
+            }
+
+            break;
+
+        case S_HALLWAY1TO2:
+
+            break;
+    }
+
+    // Some code here if entry or exit functions need to be called.
+    
+    curr_state = next_state;
+
 }
+
+void StateMachine_AO_Run()
+{
+
+}
+
+
 
 void main(void)
 {
 
     //next step, PID to go straight
     // thing is we cant always rely on perfectly straight heading
+    // so we will need the walls to correct us sometimes,
+    // in certain hallways we wanna use certain walls though
 
 
     Clock_Init48MHz();
+    uint32_t channel = 1;
+    Distance_Sensor_Init(1);
+
     Motor_Init();
     LaunchPad_Init();
     LaunchPad_LED(0);
+
     Bump_Init();
     Tachometer_Init();
     Blinker_Init();
     Odometry_Init(ODO_INIT_XPOS, ODO_INIT_YPOS, ODO_INIT_HEADING);
 
-    uint32_t channel = 1;
-    Distance_Sensor_Init(channel);
-
-
-
 
     SysTick_Init_Ints(ODO_UPDATE_PERIOD, 4);
-    EnableInterrupts();
+    EnableInterrupts(); //used for tach i think
 
-    ForwardUntilXStart(DISTANCE_1FT*5);
+    ForwardUntilXStart(DISTANCE_1FT);
 
     //while its still running
     uint32_t result = 0;
@@ -135,11 +140,7 @@ void main(void)
         
         if(pollDistanceSensor())
         {
-            if(TxChannel <= 2)
-            {
-                SetCursor(6, TxChannel+1);
-                OutUDec(Distances[TxChannel]);
-            }
+
             channel = (channel+1)%3;
             OPT3101_StartMeasurementChannel(channel);
 
