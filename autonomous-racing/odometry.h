@@ -68,8 +68,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define WEST -8192   ///< direction that is west
 #define XYTOLERANCE 10000      ///< tolerance in x,y goal seeking, 1 cm
 #define THETATOLERANCE (4096/90)  ///< tolerance in angle goal seeking, 1 deg
-#define MOTORFAST 14998
-#define MOTORSLOW 3000
+#define MOTORFAST 5000
+#define MOTORSLOW 5000
 
 /**
  * Initialize odometry module by specifying the initial position/angle of the robot.
@@ -223,11 +223,22 @@ uint32_t ForwardUntilY(int32_t desiredY);
 /**
  * Odometry command to soft left until theta goal has been reached.
  * This routine will run until goal is met.
+ * This will only work if the currentTheta is LESS than desired theta
  * @param desiredTh desired theta position in units of 2*pi/16384 radians
  * @return 0 for success, nonzero is failure (crash=bump sensor or 0xFF=going wrong way)
  * @brief Soft Left Until Theta
  */
 uint32_t SoftLeftUntilTh(int32_t desiredTh);
+
+/**
+ * Odometry command to soft right until theta goal has been reached.
+ * This routine will run until goal is met.
+ * This will only work if the currentTheta is GREATER THAN desired theta
+ * @param desiredTh desired theta position in units of 2*pi/16384 radians
+ * @return 0 for success, nonzero is failure (crash=bump sensor or 0xFF=going wrong way)
+ * @brief Soft Right Until Theta
+ */
+uint32_t SoftRightUntilTh(int32_t desiredTh);
 
 
 /**

@@ -341,7 +341,8 @@ uint32_t ForwardUntilYStatus(void){uint32_t data;
   return (goal<XYTOLERANCE);
 }
 
-uint32_t SoftLeftUntilTh(int32_t desiredTh){uint32_t data;
+uint32_t SoftLeftUntilTh(int32_t desiredTh){
+  uint32_t data;
   int32_t goal;  // in 2*pi/16384 radians
   int32_t badCount = 10;
   int32_t lastgoal=abs(desiredTh-MyTheta);  // in 2*pi/16384 radians
@@ -362,6 +363,31 @@ uint32_t SoftLeftUntilTh(int32_t desiredTh){uint32_t data;
   }while((data==0)&&(goal>THETATOLERANCE));
   Display();
   return data; // reason for stopping, 0 means success
+}
+
+uint32_t SoftRightUntilTh(int32_t desiredTh)
+{
+    uint32_t data;
+    int32_t goal;  // in 2*pi/16384 radians
+    int32_t badCount = 10;
+    int32_t lastgoal=abs(desiredTh-MyTheta);  // in 2*pi/16384 radians
+    SoftRight();
+    do{// wait for touch or Th position
+      data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
+      Error = desiredTh-MyTheta;   // in 2*pi/16384 radians
+      if(Error >= PI)Error = Error-TWOPI;  // -8192 to +8191
+      if(Error < -PI)Error = Error+TWOPI;  // -8192 to +8191
+      goal = abs(Error);           // in 2*pi/16384 radians
+      if(goal > lastgoal){         // missed it, going wrong way??
+        badCount--;
+        if(badCount<=0){
+          data = 0xFF; // wrong way
+        }
+      }
+      lastgoal = goal;
+    }while((data==0)&&(goal>THETATOLERANCE));
+    Display();
+    return data; // reason for stopping, 0 means success
 }
 
 void SoftLeftUntilThStart(int32_t thedesiredTh){

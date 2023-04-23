@@ -67,18 +67,14 @@ policies, either expressed or implied, of the FreeBSD Project.
  * @brief
  * @{*/
 
-/**
- * \brief red color P2.2-P2.0 LED
- */
-//#define RED       0x01
-/**
- * \brief green color P2.2-P2.0 LED
- */
-//#define GREEN     0x02
-/**
- * \brief blue color P2.2-P2.0 LED
- */
-//#define BLUE      0x04
+#define RED        0x01
+#define GREEN      0x02
+#define BLUE       0x04
+#define DARK       0x00
+#define YELLOW     (RED + GREEN)
+#define SKY_BLUE   (GREEN + BLUE)
+#define WHITE      (GREEN + RED + BLUE)
+#define PINK       (RED + BLUE)
 
 /**
  * Initialize LaunchPad I/O
