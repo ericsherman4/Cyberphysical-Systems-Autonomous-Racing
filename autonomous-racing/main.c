@@ -648,8 +648,44 @@ void main(void)
     {
         // Systick handler is currently running
         StateMachine_Main_Run();
-
-
     }
-
 }
+
+#if 0
+void main(void)
+{
+    Clock_Init48MHz();
+    Bump_Init();
+    LaunchPad_Init();
+
+    uint8_t status = 0;
+
+    while(1)
+    {
+        status = Bump_Read();
+        switch(status)
+        {
+            case 1:
+                LaunchPad_Output(RED);
+                break;
+            case 2:
+                LaunchPad_Output(GREEN);
+                break;
+            case 4:
+                LaunchPad_Output(PINK);
+                break;
+            case 8:
+                LaunchPad_Output(SKY_BLUE);
+                break;
+            case 16:
+                LaunchPad_Output(YELLOW);
+                break;
+            case 32:
+                LaunchPad_Output(BLUE);
+                break;
+            default:
+                LaunchPad_Output(0);
+        }
+    }
+}
+#endif
