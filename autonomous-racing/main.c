@@ -75,13 +75,28 @@ void main(void)
     SysTick_Init_Ints(SYSTICK_UPDATE, 4);
     EnableInterrupts(); //used for tach i think
 
+    UART0_Init();
+
     StateMachine_Store_Distances(Distances);
 
+    char uart_command = 'g';
 
     while(1)
     {
+        if((EUSCI_A0->IFG&0x01) != 0)
+        {
+            uart_command = ((char)(EUSCI_A0->RXBUF));
+        }
+
+        if(uart_command == 'g')
+        {
+            StateMachine_Main_Run();
+        }
+        else if(uart_command == 's')
+        {
+            Motor_Set_Target(M_STOP,0,0);
+        }
         // Systick handler is currently running
-        StateMachine_Main_Run();
     }
 
 }
