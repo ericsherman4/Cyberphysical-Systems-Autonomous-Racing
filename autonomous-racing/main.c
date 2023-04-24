@@ -103,12 +103,10 @@ void upon_entry(states_e state)
             LaunchPad_Output(BLUE);
             if(MyTheta > target_heading)
             {
-                // turn right
                 SoftRightUntilThStart(target_heading);
             }
             else
             {
-                // turn left
                 SoftLeftUntilThStart(target_heading);
             }
             break;
@@ -127,22 +125,32 @@ void upon_entry(states_e state)
             HardRightUntilThStart(target_heading);
             break;
         case S_HALLWAY3_STR:
-            target_heading = -8192;
+            target_heading = 0;
             LaunchPad_Output(GREEN);
             ForwardUntilXStart(DISTANCE_1FT, S_HALLWAY3_STR);
             consistent_left = 0;
             consistent_right = 0;
             break;
-        case S_HALLWAY3_ALIGN:
+        case S_HALLWAY3_FIRST_ALIGN:
             LaunchPad_Output(YELLOW);
             if(MyTheta > target_heading)
             {
-                // turn right
                 SoftRightUntilThStart(target_heading);
             }
             else
             {
-                // turn left
+                SoftLeftUntilThStart(target_heading);
+            }
+            break;
+        case S_HALLWAY3_ALIGN:
+            target_heading = 0;
+            LaunchPad_Output(BLUE);
+            if(MyTheta > target_heading)
+            {
+                SoftRightUntilThStart(target_heading);
+            }
+            else
+            {
                 SoftLeftUntilThStart(target_heading);
             }
             break;
@@ -162,8 +170,10 @@ void upon_exit(states_e state)
             Odometry_Init(MyX, 0, MyTheta);
             break;
         case S_HALLWAY2_TO3:
-            Odometry_Init(0, MyY, MyTheta);
+            Odometry_Init(0, 0, 0);
             break;
+        // case S_HALLWAY3_FIRST_ALIGN:
+
     }
 
 }
@@ -202,7 +212,7 @@ void StateMachine_Main_Run()
                 Motor_Forward(ramp,ramp);
                 Clock_Delay1ms(50);
             }
-            NX_STATE(S_HALLWAY2_TO3);
+            NX_STATE(S_HALLWAY2_STR);
         
         case S_HALLWAY1_STR:
             
@@ -236,7 +246,7 @@ void StateMachine_Main_Run()
 
             // Check on X loc
 //            if(MyX > (DISTANCE_1FT*20))
-             if (MyX > (DISTANCE_1FT*93))
+             if (MyX > (DISTANCE_1FT*91))
             {
                 Motor_Stop();
                 NX_STATE(S_HALLWAY1_TO2);
@@ -351,15 +361,25 @@ void StateMachine_Main_Run()
 
 
             // Check on Y loc
-            if(MyY < (-(DISTANCE_1FT*19))) //placed robot facing mechanical closet, with robot aligned with back of the bench
+            if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
             // if (MyY < (-(DISTANCE_1FT*122))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
             {
                 Motor_Stop();
                 NX_STATE(S_HALLWAY2_TO3);
             }
 
-            consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
-            consistent_right = (Distances[2] < 900) ? (consistent_right+1) : 0;
+
+            // if(MyY < (-(DISTANCE_1FT*95)))
+            if(MyY < -(DISTANCE_1FT*5))
+            {
+                consistent_left = (Distances[0] < 300) ? (consistent_left+1) : 0;
+                consistent_right = (Distances[2] < 300) ? (consistent_right+1) : 0;
+            }
+            else
+            {
+                consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
+                consistent_right = (Distances[2] < 900) ? (consistent_right+1) : 0;
+            }
 
             if(consistent_right == 4)
             {
@@ -411,6 +431,12 @@ void StateMachine_Main_Run()
         case S_HALLWAY2_TO3:
             command_status = ForwardUntilThStatus();
 
+            if(MyTheta < -7900)
+            {
+                Odometry_Init(MyX, MyY, 0); //if you reset theta to zero then x will increase in a positive direction
+                NX_STATE(S_HALLWAY3_ALIGN);
+            }
+
             if(command_status == 1)
             {
                 //sucess
@@ -461,26 +487,28 @@ void StateMachine_Main_Run()
 
 
             // Check on X loc
-            if (MyX < (-(DISTANCE_1FT*93)))
+            if (MyX > ((DISTANCE_1FT*93)))
             {
                 Motor_Stop();
                 NX_STATE(S_STOP);
             }
 
-            consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
-            consistent_right = (Distances[2] < 900) ? (consistent_right+1) : 0;
+            consistent_left = (Distances[0] < 200) ? (consistent_left+1) : 0;
+            consistent_right = (Distances[2] < 200) ? (consistent_right+1) : 0;
 
             if(consistent_right == 4)
             {
                 // make the robot think its more turned right than it is
-                Odometry_Init(MyX, MyY, -8192 -100);
+                Odometry_Init(MyX, MyY, 200);
                 consistent_right = 0;
             }
+
+            #warning "YOU NEED TO ADD A CHECK ONCE U REACH END OF HALLWAY 2 BECAUS THE THINGS ON THE RIGHT PUSH U INTO THE SERVICE ELEVATOR"
 
             if(consistent_left == 4)
             {
                 // turn right a bit
-                Odometry_Init(MyX, MyY, -8192 +100);
+                Odometry_Init(MyX, MyY, 200);
                 consistent_left = 0;
             }
 
