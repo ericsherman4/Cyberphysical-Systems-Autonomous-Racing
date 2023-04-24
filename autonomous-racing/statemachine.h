@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #define NX_STATE(val) next_state=(val); break;
+#define STATE_AFTER_BEGIN S_HALLWAY3_STR
 
 // 1/48/10^6*700000 is 15ms update
 // 1/48/10^6*1200000 is 25ms update
@@ -15,12 +16,13 @@
 #define SYSTICK_UPDATE MS_25_UPDATE
 
 #define MOTORFAST 8000
-#define MOTORSLOW 6000
+#define MOTORSLOW 6500
 #define MOTORTURNSPEED 2200
 
 #define ODO_INIT_XPOS 0 
 #define ODO_INIT_YPOS 0
 #define ODO_INIT_HEADING 0
+// #warning "DONT FORGET TO CHANGE THIS"
 #define DISTANCE_1FT 304800
 
 
@@ -39,9 +41,8 @@ typedef enum states {
     S_STOP
 } states_e;
 
-extern uint32_t Distances[3];
 
-
+void StateMachine_Store_Distances(uint32_t * distances);
 void upon_entry(states_e state);
 void upon_exit(states_e state);
 void StateMachine_Main_Run(void);

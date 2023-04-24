@@ -9,7 +9,10 @@
 // https://coder-tronics.com/state-machine-tutorial-pt2/
 
 extern uint32_t uptime_ms;
+
 uint32_t start_time;
+
+uint32_t * Distances_local;
 
 
 states_e curr_state = BEGIN;
@@ -23,6 +26,11 @@ uint8_t consistent_left = 0;
 uint8_t consistent_front = 0;
 
 bool reached_end_hw2 = false;
+
+void StateMachine_Store_Distances(uint32_t * distances)
+{
+    Distances_local = distances;
+}
 
 
 void upon_entry(states_e state)
@@ -150,18 +158,13 @@ void StateMachine_Main_Run()
         case BEGIN:
             // default switch from begin to hallway1 straight so you can run its entry command
 
-            // for(ramp=4000; ramp <= MOTORFAST; ramp+=100)
-            // {
-            //     Motor_Forward(ramp,ramp);
-            //     Clock_Delay1ms(50);
-            // }
-            NX_STATE(S_HALLWAY1_STR);
+            NX_STATE(STATE_AFTER_BEGIN);
         
         case S_HALLWAY1_STR:
             
             // check for obstacles
 
-            if(Distances[1] < 300)
+            if(Distances_local[1] < 300)
             {
                 LaunchPad_LED(1);
             }
@@ -170,8 +173,8 @@ void StateMachine_Main_Run()
                 LaunchPad_LED(0);
             }
 
-            consistent_left = (Distances[0] < 900) ? consistent_left+1 : 0;
-            consistent_right = (Distances[2] < 900) ? consistent_right+1 : 0;
+            consistent_left = (Distances_local[0] < 900) ? consistent_left+1 : 0;
+            consistent_right = (Distances_local[2] < 900) ? consistent_right+1 : 0;
 
             if(consistent_right == 4)
             {
@@ -186,7 +189,7 @@ void StateMachine_Main_Run()
                 consistent_left = 0;
             }
 
-            consistent_front = (Distances[1] < 950) ? (consistent_front+1) : 0;
+            consistent_front = (Distances_local[1] < 950) ? (consistent_front+1) : 0;
 
             // Check on X loc
            if(MyX > (DISTANCE_1FT*10) && consistent_front == 3)
@@ -325,7 +328,7 @@ void StateMachine_Main_Run()
         case S_HALLWAY2_STR:
 
             // check for obstacles
-            if(Distances[1] < 300)
+            if(Distances_local[1] < 300)
             {
                 LaunchPad_LED(1);
             }
@@ -334,14 +337,14 @@ void StateMachine_Main_Run()
                 LaunchPad_LED(0);
             }
 
-            if(MyY < (-(DISTANCE_1FT*105)))
-            // if(MyY < -(DISTANCE_1FT*5))
+            // if(MyY < (-(DISTANCE_1FT*105)))
+            if(MyY < -(DISTANCE_1FT*5))
             {
                 reached_end_hw2 = true;
             }
 
-            consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
-            consistent_right = (Distances[2] < 900) ? (consistent_right+1) : 0;
+            consistent_left = (Distances_local[0] < 900) ? (consistent_left+1) : 0;
+            consistent_right = (Distances_local[2] < 900) ? (consistent_right+1) : 0;
 
 
             if(consistent_right == 4)
@@ -399,7 +402,7 @@ void StateMachine_Main_Run()
         case S_HALLWAY2_STR_END:
 
             // check for obstacles
-            if(Distances[1] < 300)
+            if(Distances_local[1] < 300)
             {
                 LaunchPad_LED(1);
             }
@@ -410,16 +413,16 @@ void StateMachine_Main_Run()
 
 
             // Check on Y loc
-            // if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
-            if (MyY < (-(DISTANCE_1FT*120))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
+            if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
+            // if (MyY < (-(DISTANCE_1FT*120))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
             {
                 Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY2_TO3);
             }
 
 
-            consistent_left = (Distances[0] < 500) ? (consistent_left+1) : 0;
-            consistent_right = (Distances[2] < 500) ? (consistent_right+1) : 0;
+            consistent_left = (Distances_local[0] < 500) ? (consistent_left+1) : 0;
+            consistent_right = (Distances_local[2] < 500) ? (consistent_right+1) : 0;
 
 
             if(consistent_right == 4)
@@ -535,7 +538,7 @@ void StateMachine_Main_Run()
 
         case S_HALLWAY3_STR:
             // check for obstacles
-            if(Distances[1] < 300)
+            if(Distances_local[1] < 300)
             {
                 LaunchPad_LED(1);
             }
@@ -552,20 +555,20 @@ void StateMachine_Main_Run()
                 NX_STATE(S_STOP);
             }
 
-            consistent_left = (Distances[0] < 300) ? (consistent_left+1) : 0;
-            consistent_right = (Distances[2] < 300) ? (consistent_right+1) : 0;
+            consistent_left = (Distances_local[0] < 500) ? (consistent_left+1) : 0;
+            consistent_right = (Distances_local[2] < 500) ? (consistent_right+1) : 0;
 
             if(consistent_right == 3)
             {
                 // make the robot think its more turned right than it is
-                Odometry_Init(MyX, MyY, 305);
+                Odometry_Init(MyX, MyY, -205);
                 consistent_right = 0;
             }
 
             if(consistent_left == 3)
             {
                 // turn right a bit
-                Odometry_Init(MyX, MyY, 305);
+                Odometry_Init(MyX, MyY, 205);
                 consistent_left = 0;
             }
 
@@ -578,7 +581,7 @@ void StateMachine_Main_Run()
                 // success
                 // Motor_Set_Target(M_STOP, 0, 0);
                 // check if heading is too far off course
-                if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
+                if(MyTheta > (100 + target_heading) || MyTheta < (target_heading - 100))
                 {
                     NX_STATE(S_HALLWAY3_ALIGN);
                 }

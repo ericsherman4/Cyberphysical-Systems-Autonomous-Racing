@@ -5,3 +5,8 @@ first need the thing with the stopping
 so lets do that should be easy
 
 make systick run at 1ms and do a task manager
+
+
+so that thing about odometry wrapping i think had to do with your checks for alignment, should check where mytheta is when it wraps
+in which case you just turn the other way to get back.
+may be very useful of AO

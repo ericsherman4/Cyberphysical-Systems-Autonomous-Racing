@@ -89,7 +89,7 @@ typedef struct
   Motor_Command_e command;
 } Motor_t;
 
-#define NEW_VAL_PERCENT (0.1f)
+#define NEW_VAL_PERCENT (0.15f)
 #define OLD_VAL_PERCENT (1.0f-NEW_VAL_PERCENT)
 
 // filter

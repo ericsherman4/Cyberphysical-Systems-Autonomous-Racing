@@ -17,7 +17,7 @@
 volatile uint32_t uptime_ms;
 
 //opt3101 stuff
-uint32_t Distances[3];
+uint32_t Distances[3] = {65536, 65536, 65536};
 uint32_t FilteredDistances[3];
 uint32_t Amplitudes[3];
 uint32_t TxChannel;
@@ -75,11 +75,7 @@ void main(void)
     SysTick_Init_Ints(SYSTICK_UPDATE, 4);
     EnableInterrupts(); //used for tach i think
 
-    // Motor_Set_Target(M_FORWARD,8000,8000);
-    // Clock_Delay1ms(5000);
-    // Motor_Set_Target(M_FORWARD,3000,3000);
-    // Clock_Delay1ms(5000);
-    // Motor_Set_Target(M_STOP, 0,0 );
+    StateMachine_Store_Distances(Distances);
 
 
     while(1)
