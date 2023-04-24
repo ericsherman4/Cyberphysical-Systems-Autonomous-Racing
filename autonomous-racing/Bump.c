@@ -1,43 +1,3 @@
-// Bump.c
-// Runs on MSP432
-// Provide low-level functions that interface bump switches the robot.
-// Daniel Valvano and Jonathan Valvano
-// July 11, 2019
-
-/* This example accompanies the book
-   "Embedded Systems: Introduction to Robotics,
-   Jonathan W. Valvano, ISBN: 9781074544300, copyright (c) 2019
- For more information about my classes, my research, and my books, see
- http://users.ece.utexas.edu/~valvano/
-
-Simplified BSD License (FreeBSD License)
-Copyright (c) 2019, Jonathan Valvano, All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
-AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
-USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-The views and conclusions contained in the software and documentation are
-those of the authors and should not be interpreted as representing official
-policies, either expressed or implied, of the FreeBSD Project.
-*/
-
 // Negative logic bump sensors
 // P4.7 Bump5, left side of robot
 // P4.6 Bump4
@@ -46,21 +6,36 @@ policies, either expressed or implied, of the FreeBSD Project.
 // P4.2 Bump1
 // P4.0 Bump0, right side of robot
 
+
+#include "Bump.h"
 #include <stdint.h>
-#include "msp.h"
+#include "launchpad.h"
+
+
+
+void BumpInt_Init(void){
+    P4->IE |= 0xED; //Enabling interrupts for bump pins on port 4
+    P4->IES |= 0xED;   //Enabling rising edge interrupt bump pins (I think)
+    P4->IFG &= ~0xED; //Clearing interrupt flag
+    NVIC_EnableIRQ(PORT4_IRQn);
+    //P4->IV |= 0x0F; //Setting interrupt to low priority (not sure if this is a mistake, or what "low" implies)
+}
+
+void PORT4_IRQHandler(void){
+    LaunchPad_Output(0x01); //Setting LED
+    P4->IFG &= ~0xED;       //Clearing Flags
+}
+
 // Initialize Bump sensors
 // Make six Port 4 pins inputs
 // Activate interface pullup
 // pins 7,6,5,3,2,0
 void Bump_Init(void){
-    // write this as part of Lab 10
-
-    // mask is 0xFD
-    P4->SEL0 &= ~0xFD;
-    P4->SEL1 &= ~0xFD; // set P4.7-P4.2 & P4.0 to GPIO
-    P4->DIR &= ~0xFD; // set P4.7-P4.2 & P4.0 to inputs
-    P4->REN |= 0xFD; // enable pull resistors on P4.7-P4.2 & P4.0
-    P4->OUT |= 0xFD; // set to pull up on P4.7-P4.2 & P4.0
+    P4-> SEL0 &= ~0xED; //Initializing P4 bumper pins
+    P4-> SEL1 &= ~0xED;
+    P4-> DIR |= 0xED;
+    P4-> REN |= 0xED; //Enabling pull-up resistors
+    P4-> OUT |= 0xED;
 }
 // Read current state of 6 switches
 // Returns a 6-bit positive logic result (0 to 63)
@@ -71,15 +46,9 @@ void Bump_Init(void){
 // bit 1 Bump1
 // bit 0 Bump0
 uint8_t Bump_Read(void){
-    // write this as part of Lab 10
-
-    // first part, upper 3 bits,right shifted by 2, to get bump5-bump3 in right position
-    // second part, bit 3 and 2, right shifted by 1 to get bump2-1 in right position
-    // last part, bit 0, which is already in the right position.
-    uint8_t result = (((P4->IN & 0xE0) >> 2 ) | ((P4->IN & 0x0C) >> 1 ) | (P4->IN & 0x01));
-
-    //invert the logic since its negative logic and then set the upper 2 bits to zero since those are unused.
-    result = (~result & 0x3F);
-    return result;
+    uint8_t bump, bumpOut; //Creating read variables
+    bump = P4->IN; //Reading from input register
+    bumpOut = (~bump&0x80) >> 2 | (~bump&0x40) >> 2 | (~bump&0x20) >> 2| (~bump&0x08) >> 1 | (~bump&0x04) >> 1 | (~bump&0x01); //Inverting and shifting bumper bits to align with a 6 bit output
+    return bumpOut;
 }
 

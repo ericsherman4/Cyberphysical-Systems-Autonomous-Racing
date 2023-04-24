@@ -1,3 +1,9 @@
+#ifndef BUMP_H_
+#define BUMP_H_
+
+#include <stdint.h>
+#include "msp.h"
+#include "launchpad.h"
 /**
  * @file      Bump.h
  * @brief     Provide low-level functions that interface bump switches the robot.
@@ -72,6 +78,9 @@ policies, either expressed or implied, of the FreeBSD Project.
  */
 void Bump_Init(void);
 
+void BumpInt_Init(void);
+
+void PORT4_IRQHandler(void);
 /**
  * Read current state of 6 bump switches<br>
  * Read Port 4 pins 7,6,5,3,2,0 inputs<br>
@@ -88,4 +97,6 @@ void Bump_Init(void);
  * @brief  Read current state of 6 switches
  */
 uint8_t Bump_Read(void);
+
+#endif
 
