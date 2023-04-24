@@ -222,13 +222,13 @@ void HardLeft(void){
   Action = HARDLEFT;
   Blinker_Output(FR_LEFT+BK_LEFT);
   Display();
-  Motor_Left(MOTORSLOW,MOTORSLOW);  // left
+  Motor_Left(MOTORTURNSPEED,MOTORTURNSPEED);  // left
 }
 void HardRight(void){
   Action = HARDRIGHT;
   Blinker_Output(FR_RGHT+BK_RGHT);
   Display();
-  Motor_Right(MOTORSLOW,MOTORSLOW);  // right
+  Motor_Right(MOTORTURNSPEED,MOTORTURNSPEED);  // right
 }
 void SoftLeft(void){
   Action = SOFTLEFT;

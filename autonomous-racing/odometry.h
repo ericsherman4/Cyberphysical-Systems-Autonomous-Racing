@@ -68,8 +68,9 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define WEST -8192   ///< direction that is west
 #define XYTOLERANCE 10000      ///< tolerance in x,y goal seeking, 1 cm
 #define THETATOLERANCE (4096/90)  ///< tolerance in angle goal seeking, 1 deg
-#define MOTORFAST 5000
-#define MOTORSLOW 3300
+#define MOTORFAST 8000
+#define MOTORSLOW 6000
+#define MOTORTURNSPEED 3000
 
 #define ODO_INIT_XPOS 0 
 #define ODO_INIT_YPOS 0

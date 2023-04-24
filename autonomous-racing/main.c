@@ -41,7 +41,6 @@ bool pollDistanceSensor(void)
 }
 
 
-
 void SysTick_Handler()
 {
     UpdatePosition();
@@ -70,16 +69,25 @@ states_e curr_state = BEGIN;
 int32_t target_heading = 0;
 uint32_t command_status = 0;
 
+#define NX_STATE(val) next_state=(val); break;
+uint32_t ramp;
+uint8_t consistent_right = 0;
+uint8_t consistent_left = 0;
+
 void upon_entry(states_e state)
 {
     switch(state)
     {
         case S_HALLWAY1_STR:
             LaunchPad_Output(GREEN);
+            target_heading = 0;
             ForwardUntilXStart(DISTANCE_1FT);
+            consistent_left = 0;
+            consistent_right = 0;
             break;
         case S_HALLWAY1_ALIGN:
             LaunchPad_Output(BLUE);
+            target_heading =0;
             // turning left, mytheta goes up so if mytheta > target, then we are facing too far to the left
             // so we want to turn to the right
             if(MyTheta > target_heading)
@@ -95,7 +103,9 @@ void upon_entry(states_e state)
             break;
         case S_HALLWAY1_TO2:
             LaunchPad_Output(PINK);
+            target_heading = -4096+300;
             HardRightUntilThStart(target_heading);
+
             break;
         case S_HALLWAY2_ALIGN:
             LaunchPad_Output(BLUE);
@@ -111,8 +121,11 @@ void upon_entry(states_e state)
             }
             break;
         case S_HALLWAY2_STR:
+            target_heading = -4096+200;
             LaunchPad_Output(GREEN);
             ForwardUntilYStart(DISTANCE_1FT);
+            consistent_left = 0;
+            consistent_right = 0;
             break;
         case S_STOP:
             LaunchPad_Output(RED);
@@ -123,27 +136,33 @@ void upon_entry(states_e state)
 
 void upon_exit(states_e state)
 {
-
-}
-
-void set_target_heading(states_e next_state)
-{
-    // set target heading
-    switch(next_state)
+    switch(state)
     {
-        case S_HALLWAY1_STR:
-        case S_HALLWAY1_ALIGN:
-            target_heading = 0;
-            break;
         case S_HALLWAY1_TO2:
-        case S_HALLWAY2_STR:
-        case S_HALLWAY2_ALIGN:
-            target_heading = -(16384 >> 2); //equiv to divide by 4
-        //TODO: finish
+            Odometry_Init(MyX, 0, MyTheta);
+            break;
     }
+
 }
 
-#define NX_STATE(val) next_state=(val); break;
+// void set_target_heading(states_e next_state)
+// {
+//     // set target heading
+//     switch(next_state)
+//     {
+//         case S_HALLWAY1_STR:
+//         case S_HALLWAY1_ALIGN:
+//             target_heading = 0;
+//             break;
+//         case S_HALLWAY1_TO2:
+//         case S_HALLWAY2_STR:
+//         case S_HALLWAY2_ALIGN:
+//             target_heading = -(16384 >> 2) + 100; //equiv to divide by 4
+//         //TODO: finish
+//     }
+// }
+
+
 
 void StateMachine_Main_Run()
 {
@@ -154,7 +173,13 @@ void StateMachine_Main_Run()
     {
         case BEGIN:
             // default switch from begin to hallway1 straight so you can run its entry command
-            NX_STATE(S_HALLWAY1_STR);
+
+            for(ramp=4000; ramp <= MOTORFAST; ramp+=100)
+            {
+                Motor_Forward(ramp,ramp);
+                Clock_Delay1ms(50);
+            }
+            NX_STATE(S_HALLWAY1_TO2);
         
         case S_HALLWAY1_STR:
             
@@ -168,8 +193,26 @@ void StateMachine_Main_Run()
                 LaunchPad_LED(0);
             }
 
+            consistent_left = (Distances[0] < 900) ? consistent_left+1 : 0;
+            consistent_right = (Distances[2] < 900) ? consistent_right+1 : 0;
+
+            if(consistent_right == 4)
+            {
+                Odometry_Init(MyX, MyY, -100);
+                consistent_right = 0;
+            }
+            else if(consistent_left == 4)
+            {
+                //approaching left wall but robot thinks theta is center
+                // make the robot think heading is further to the left than it is so the robot will push right
+                Odometry_Init(MyX, MyY, 100);
+                consistent_left = 0;
+            }
+
+
             // Check on X loc
-            if (MyX > (DISTANCE_1FT*90))
+            if(MyX > (DISTANCE_1FT*20))
+            // if (MyX > (DISTANCE_1FT*89))
             {
                 Motor_Stop();
                 NX_STATE(S_HALLWAY1_TO2);
@@ -183,7 +226,7 @@ void StateMachine_Main_Run()
                 // success
                 // Motor_Stop();
                 // check if heading is too far off course
-                if(MyTheta > (2000 + target_heading) || MyTheta < (target_heading - 2000))
+                if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
                 {
                     NX_STATE(S_HALLWAY1_ALIGN);
                 }
@@ -282,13 +325,37 @@ void StateMachine_Main_Run()
                 LaunchPad_LED(0);
             }
 
+
             // Check on Y loc
-            if (MyY < (-(DISTANCE_1FT*3)))
+            if (MyY < (-(DISTANCE_1FT*89)))
             {
                 Motor_Stop();
                 NX_STATE(S_STOP);
             }
 
+            consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
+            consistent_right = (Distances[2] < 900) ? (consistent_right+1) : 0;
+
+            if(consistent_right == 4)
+            {
+                // make the robot think its more turned right than it is
+                Odometry_Init(MyX, MyY, MyTheta -200);
+                consistent_right = 0;
+            }
+
+            if(consistent_left == 4)
+            {
+                // turn right a bit
+                target_heading = -4096 - 400;
+                consistent_left = 0;
+            }
+
+            if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
+            {
+                NX_STATE(S_HALLWAY2_ALIGN);
+            }
+
+            
             // check on status of going straight
             command_status = ForwardUntilYStatus();
             
@@ -297,7 +364,7 @@ void StateMachine_Main_Run()
                 // success
                 // Motor_Stop();
                 // check if heading is too far off course
-                if(MyTheta > (2000 + target_heading) || MyTheta < (target_heading - 2000))
+                if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
                 {
                     NX_STATE(S_HALLWAY2_ALIGN);
                 }
@@ -329,8 +396,8 @@ void StateMachine_Main_Run()
     
     if(next_state !=  curr_state)
     {
-        set_target_heading(next_state);
-        upon_entry(curr_state);
+        // set_target_heading(next_state);
+        upon_exit(curr_state);
         upon_entry(next_state);
     }
     
