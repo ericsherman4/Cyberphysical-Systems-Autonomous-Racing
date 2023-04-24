@@ -56,6 +56,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #ifndef _ODOMETRY_H_
 #define _ODOMETRY_H_
 #include <stdint.h>
+#include "statemachine.h"
+
 #define N 360     ///< counts/rotation, just one edge of one tach
 #define D 70000   ///< wheel diameter 0.0001cm
 #define W 140000  ///< wheel base 0.0001 cm
@@ -268,7 +270,7 @@ uint32_t SoftRightUntilTh(int32_t desiredTh);
  * @return none
  * @brief start going Forward Until X
  */
-void ForwardUntilXStart(int32_t thedesiredX);
+void ForwardUntilXStart(int32_t thedesiredX, states_e state);
 
 /**
  * Odometry command to check status of Go straight until X command.
@@ -285,7 +287,7 @@ uint32_t ForwardUntilXStatus(void);
  * @return none
  * @brief start going Forward Until Y
  */
-void ForwardUntilYStart(int32_t thedesiredY);
+void ForwardUntilYStart(int32_t thedesiredY, states_e state);
 
 /**
  * Odometry command to check status of Go straight until Y command.

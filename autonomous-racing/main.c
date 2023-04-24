@@ -12,6 +12,7 @@
 #include "Blinker.h"
 #include "opt3101.h"
 #include "pid.h"
+#include "statemachine.h"
 
 
 
@@ -55,15 +56,7 @@ void SysTick_Handler()
 }
 
 // https://coder-tronics.com/state-machine-tutorial-pt2/
-typedef enum states {
-    BEGIN,
-    S_HALLWAY1_STR, 
-    S_HALLWAY1_ALIGN, 
-    S_HALLWAY1_TO2,
-    S_HALLWAY2_STR,
-    S_HALLWAY2_ALIGN, 
-    S_STOP
-} states_e;
+
 
 states_e curr_state = BEGIN;
 int32_t target_heading = 0;
@@ -81,7 +74,7 @@ void upon_entry(states_e state)
         case S_HALLWAY1_STR:
             LaunchPad_Output(GREEN);
             target_heading = 0;
-            ForwardUntilXStart(DISTANCE_1FT);
+            ForwardUntilXStart(DISTANCE_1FT, S_HALLWAY1_STR);
             consistent_left = 0;
             consistent_right = 0;
             break;
@@ -103,9 +96,8 @@ void upon_entry(states_e state)
             break;
         case S_HALLWAY1_TO2:
             LaunchPad_Output(PINK);
-            target_heading = -4096+300;
+            target_heading = -4096;
             HardRightUntilThStart(target_heading);
-
             break;
         case S_HALLWAY2_ALIGN:
             LaunchPad_Output(BLUE);
@@ -121,16 +113,44 @@ void upon_entry(states_e state)
             }
             break;
         case S_HALLWAY2_STR:
-            target_heading = -4096+200;
+            target_heading = -4096;
             LaunchPad_Output(GREEN);
-            ForwardUntilYStart(DISTANCE_1FT);
+            #warning "These are wrong!! you keep calling forwarduntilystart but its already past this distance so it probably errors right away"
+            // but maybe not because it does stay in green...
+            ForwardUntilYStart(DISTANCE_1FT, S_HALLWAY2_STR);
             consistent_left = 0;
             consistent_right = 0;
+            break;
+        case S_HALLWAY2_TO3:
+            target_heading = -8192;
+            LaunchPad_Output(PINK);
+            HardRightUntilThStart(target_heading);
+            break;
+        case S_HALLWAY3_STR:
+            target_heading = -8192;
+            LaunchPad_Output(GREEN);
+            ForwardUntilXStart(DISTANCE_1FT, S_HALLWAY3_STR);
+            consistent_left = 0;
+            consistent_right = 0;
+            break;
+        case S_HALLWAY3_ALIGN:
+            LaunchPad_Output(YELLOW);
+            if(MyTheta > target_heading)
+            {
+                // turn right
+                SoftRightUntilThStart(target_heading);
+            }
+            else
+            {
+                // turn left
+                SoftLeftUntilThStart(target_heading);
+            }
             break;
         case S_STOP:
             LaunchPad_Output(RED);
             Motor_Stop();
             break;
+        
     }
 }
 
@@ -140,6 +160,9 @@ void upon_exit(states_e state)
     {
         case S_HALLWAY1_TO2:
             Odometry_Init(MyX, 0, MyTheta);
+            break;
+        case S_HALLWAY2_TO3:
+            Odometry_Init(0, MyY, MyTheta);
             break;
     }
 
@@ -179,11 +202,12 @@ void StateMachine_Main_Run()
                 Motor_Forward(ramp,ramp);
                 Clock_Delay1ms(50);
             }
-            NX_STATE(S_HALLWAY1_TO2);
+            NX_STATE(S_HALLWAY2_TO3);
         
         case S_HALLWAY1_STR:
             
             // check for obstacles
+
             if(Distances[1] < 300)
             {
                 LaunchPad_LED(1);
@@ -211,8 +235,8 @@ void StateMachine_Main_Run()
 
 
             // Check on X loc
-            if(MyX > (DISTANCE_1FT*20))
-            // if (MyX > (DISTANCE_1FT*89))
+//            if(MyX > (DISTANCE_1FT*20))
+             if (MyX > (DISTANCE_1FT*93))
             {
                 Motor_Stop();
                 NX_STATE(S_HALLWAY1_TO2);
@@ -327,10 +351,11 @@ void StateMachine_Main_Run()
 
 
             // Check on Y loc
-            if (MyY < (-(DISTANCE_1FT*89)))
+            if(MyY < (-(DISTANCE_1FT*19))) //placed robot facing mechanical closet, with robot aligned with back of the bench
+            // if (MyY < (-(DISTANCE_1FT*122))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
             {
                 Motor_Stop();
-                NX_STATE(S_STOP);
+                NX_STATE(S_HALLWAY2_TO3);
             }
 
             consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
@@ -339,20 +364,15 @@ void StateMachine_Main_Run()
             if(consistent_right == 4)
             {
                 // make the robot think its more turned right than it is
-                Odometry_Init(MyX, MyY, MyTheta -200);
+                Odometry_Init(MyX, MyY, -4096 -100);
                 consistent_right = 0;
             }
 
             if(consistent_left == 4)
             {
                 // turn right a bit
-                target_heading = -4096 - 400;
+                Odometry_Init(MyX, MyY, -4096 +100);
                 consistent_left = 0;
-            }
-
-            if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
-            {
-                NX_STATE(S_HALLWAY2_ALIGN);
             }
 
             
@@ -387,6 +407,117 @@ void StateMachine_Main_Run()
                 // status is 0 meaning it is still running
                 NX_STATE(curr_state);
             }
+
+        case S_HALLWAY2_TO3:
+            command_status = ForwardUntilThStatus();
+
+            if(command_status == 1)
+            {
+                //sucess
+                Motor_Stop();
+                NX_STATE(S_HALLWAY3_STR);
+            }
+            else if(command_status > 1)
+            {
+                // failed might have turned too far
+                // go to align
+                NX_STATE(S_HALLWAY3_ALIGN);
+            }
+            else
+            {
+                //still running, stay in state
+                NX_STATE(curr_state);
+            }
+
+        case S_HALLWAY3_ALIGN:
+            command_status = ForwardUntilThStatus();
+            if(command_status == 1)
+            {
+                //sucess, we are aligned
+                NX_STATE(S_HALLWAY3_STR);
+            }
+            else if(command_status > 1)
+            {
+                // failed, align again
+                upon_entry(curr_state);
+                NX_STATE(curr_state);
+            }
+            else
+            {
+                //still running
+                NX_STATE(curr_state);
+            }
+
+        case S_HALLWAY3_STR:
+            // check for obstacles
+            if(Distances[1] < 300)
+            {
+                LaunchPad_LED(1);
+            }
+            else
+            {
+                LaunchPad_LED(0);
+            }
+
+
+            // Check on X loc
+            if (MyX < (-(DISTANCE_1FT*93)))
+            {
+                Motor_Stop();
+                NX_STATE(S_STOP);
+            }
+
+            consistent_left = (Distances[0] < 900) ? (consistent_left+1) : 0;
+            consistent_right = (Distances[2] < 900) ? (consistent_right+1) : 0;
+
+            if(consistent_right == 4)
+            {
+                // make the robot think its more turned right than it is
+                Odometry_Init(MyX, MyY, -8192 -100);
+                consistent_right = 0;
+            }
+
+            if(consistent_left == 4)
+            {
+                // turn right a bit
+                Odometry_Init(MyX, MyY, -8192 +100);
+                consistent_left = 0;
+            }
+
+            
+            // check on status of going straight
+            command_status = ForwardUntilXStatus();
+            
+            if(command_status == 1)
+            {
+                // success
+                // Motor_Stop();
+                // check if heading is too far off course
+                if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
+                {
+                    NX_STATE(S_HALLWAY3_ALIGN);
+                }
+                else
+                {
+                    //stay in state 
+                    // call entry functionality again to restart state
+                    upon_entry(curr_state);
+                    NX_STATE(curr_state);
+                }
+            }
+            else if(command_status > 1)
+            {
+                // error occurred 
+                // Motor_Stop();
+                NX_STATE(S_HALLWAY3_ALIGN);
+            }
+            else
+            {
+                // status is 0 meaning it is still running
+                NX_STATE(curr_state);
+            }
+
+
 
         case S_STOP:
             // dead hang

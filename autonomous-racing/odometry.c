@@ -212,11 +212,31 @@ void StopUntilBumperTouched(void){
   Display();
   WaitUntilBumperTouched();
 }
-void Forward(void){
+void Forward(states_e state){
   Action = GOFORWARD;
   Blinker_Output(FR_LEFT+FR_RGHT);
   Display();
-  Motor_Forward(MOTORFAST,MOTORFAST);  // move
+  // if(state == S_HALLWAY2_STR)
+  // {
+  //    Motor_Forward(MOTORFAST,MOTORFAST+200);
+  // }
+  // else
+  // {
+  //   Motor_Forward(MOTORFAST,MOTORFAST);  // move
+  // }
+
+  switch(state)
+  {
+    case S_HALLWAY2_STR:
+      Motor_Forward(MOTORFAST,MOTORFAST+200);
+      break;
+    case S_HALLWAY3_STR:
+      Motor_Forward(MOTORFAST+300,MOTORFAST);
+      break;
+    default:
+      Motor_Forward(MOTORFAST,MOTORFAST);
+      break;
+  }
 }
 void HardLeft(void){
   Action = HARDLEFT;
@@ -246,7 +266,7 @@ void SoftRight(void){
 
 uint32_t ForwardUntilCrash(void){
   uint32_t data;
-  Forward();
+  Forward(BEGIN);
   do{// wait for touch
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
   }while(data==0);
@@ -258,7 +278,7 @@ uint32_t ForwardUntilX(int32_t desiredX){
   int32_t goal;  // in 0.0001cm
   int32_t lastgoal=abs(desiredX-MyX);  // in 0.0001cm
   int32_t badCount = 10;
-  Forward();
+  Forward(BEGIN);
   do{// wait for touch or X position
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
     Error = desiredX-MyX;   // in 0.0001cm
@@ -281,12 +301,12 @@ int32_t lastgoal;  // in 0.0001cm
 int32_t badCount;
 int32_t desiredX,desiredY,desiredTh;
 enum OdometryCommand Goal; // stopped
-void ForwardUntilXStart(int32_t thedesiredX){
+void ForwardUntilXStart(int32_t thedesiredX, states_e state){
   desiredX = thedesiredX;
   lastgoal=abs(desiredX-MyX);  // in 0.0001cm
   badCount = 10;
   Goal = FORWARDTOX;
-  Forward();
+  Forward(state);
 }
 // true if done or error
 // false if still running ok
@@ -304,11 +324,12 @@ uint32_t ForwardUntilXStatus(void){uint32_t data;
   lastgoal = goal;
   return (goal<XYTOLERANCE); // true if close enough
 }
-uint32_t ForwardUntilY(int32_t desiredY){uint32_t data;
+uint32_t ForwardUntilY(int32_t desiredY){
+  uint32_t data;
   int32_t goal;  // in 0.0001cm
   int32_t lastgoal=abs(desiredY-MyY);  // in 0.0001cm
   int32_t badCount = 10;
-  Forward();
+  Forward(BEGIN);
   do{// wait for touch or Y position
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
     Error = desiredY-MyY;   // in 0.0001cm
@@ -324,12 +345,12 @@ uint32_t ForwardUntilY(int32_t desiredY){uint32_t data;
   Display();
   return data; // reason for stopping, 0 means success
 }
-void ForwardUntilYStart(int32_t thedesiredY){
+void ForwardUntilYStart(int32_t thedesiredY, states_e state){
   desiredY = thedesiredY;
   badCount = 10;
   lastgoal=abs(desiredY-MyY);  // in 0.0001cm
   Goal = FORWARDTOY;
-  Forward();
+  Forward(state);
 }
 // true if done or error
 // false if still running ok
