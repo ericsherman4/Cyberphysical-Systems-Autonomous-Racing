@@ -66,6 +66,7 @@ uint32_t command_status = 0;
 uint32_t ramp;
 uint8_t consistent_right = 0;
 uint8_t consistent_left = 0;
+uint8_t consistent_front = 0;
 
 void upon_entry(states_e state)
 {
@@ -77,6 +78,7 @@ void upon_entry(states_e state)
             ForwardUntilXStart(DISTANCE_1FT, S_HALLWAY1_STR);
             consistent_left = 0;
             consistent_right = 0;
+            consistent_front = 0;
             break;
         case S_HALLWAY1_ALIGN:
             LaunchPad_Output(BLUE);
@@ -192,7 +194,7 @@ void StateMachine_Main_Run()
                 Motor_Forward(ramp,ramp);
                 Clock_Delay1ms(50);
             }
-            NX_STATE(S_HALLWAY2_STR);
+            NX_STATE(S_HALLWAY1_STR);
         
         case S_HALLWAY1_STR:
             
@@ -223,10 +225,12 @@ void StateMachine_Main_Run()
                 consistent_left = 0;
             }
 
+            consistent_front = (Distances[1] < 950) ? (consistent_front+1) : 0;
 
             // Check on X loc
-//            if(MyX > (DISTANCE_1FT*20))
-             if (MyX > (DISTANCE_1FT*91))
+           if(MyX > (DISTANCE_1FT*10) && consistent_front == 3)
+            //  if (MyX > (DISTANCE_1FT*91) && (consistent_front == 4))
+            //  if (MyX > (DISTANCE_1FT*90))
             {
                 Motor_Stop();
                 NX_STATE(S_HALLWAY1_TO2);
@@ -346,8 +350,8 @@ void StateMachine_Main_Run()
                 LaunchPad_LED(0);
             }
 
-            // if(MyY < (-(DISTANCE_1FT*95)))
-            if(MyY < -(DISTANCE_1FT*5))
+            if(MyY < (-(DISTANCE_1FT*105)))
+            // if(MyY < -(DISTANCE_1FT*5))
             {
                 reached_end_hw2 = true;
             }
@@ -359,15 +363,15 @@ void StateMachine_Main_Run()
             if(consistent_right == 4)
             {
                 // make the robot think its more turned right than it is
-                Odometry_Init(MyX, MyY, -4096 -100);
-                consistent_right = 0;
+                Odometry_Init(MyX, MyY, -4096 -200);
+                // consistent_right = 0;
             }
 
             if(consistent_left == 4)
             {
                 // turn right a bit
-                Odometry_Init(MyX, MyY, -4096 +100);
-                consistent_left = 0;
+                Odometry_Init(MyX, MyY, -4096 +200);
+                // consistent_left = 0;
             }
 
             
@@ -417,29 +421,29 @@ void StateMachine_Main_Run()
 
 
             // Check on Y loc
-            if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
-            // if (MyY < (-(DISTANCE_1FT*122))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
+            // if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
+            if (MyY < (-(DISTANCE_1FT*120))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
             {
                 Motor_Stop();
                 NX_STATE(S_HALLWAY2_TO3);
             }
 
 
-            consistent_left = (Distances[0] < 300) ? (consistent_left+1) : 0;
-            consistent_right = (Distances[2] < 300) ? (consistent_right+1) : 0;
+            consistent_left = (Distances[0] < 500) ? (consistent_left+1) : 0;
+            consistent_right = (Distances[2] < 500) ? (consistent_right+1) : 0;
 
 
             if(consistent_right == 4)
             {
                 // make the robot think its more turned right than it is
-                Odometry_Init(MyX, MyY, -4096 -100);
+                Odometry_Init(MyX, MyY, -4096 -200);
                 consistent_right = 0;
             }
 
             if(consistent_left == 4)
             {
                 // turn right a bit
-                Odometry_Init(MyX, MyY, -4096 +100);
+                Odometry_Init(MyX, MyY, -4096 +200);
                 consistent_left = 0;
             }
 
