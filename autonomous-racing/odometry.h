@@ -70,25 +70,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define WEST -8192   ///< direction that is west
 #define XYTOLERANCE 10000      ///< tolerance in x,y goal seeking, 1 cm
 #define THETATOLERANCE (4096/90)  ///< tolerance in angle goal seeking, 1 deg
-#define MOTORFAST 8000
-#define MOTORSLOW 6000
-#define MOTORTURNSPEED 3000
 
-#define ODO_INIT_XPOS 0 
-#define ODO_INIT_YPOS 0
-#define ODO_INIT_HEADING 0
-#define DISTANCE_1FT 304800
 
-// 1/48/10^6*700000 is 15ms update
-// 1/48/10^6*1200000 is 25ms update
-//1/48/10^6*50000000 is 1.04s so divide by 10 is 100ms
-#define ODO_UPDATE_PERIOD 1200000
-#warning "see if wheel counts are between 5 and 20"
-
-#define HALLWAY1_X_MIN 1000000
-#define HALLWAY1_X_MAX 1300000
-#define HALLWAY1_Y_MIN (-1000000/2)
-#define HALLWaY1_Y_MAX (1000000/2)
 
 extern int32_t MyX,MyY;
 extern int32_t MyTheta;  

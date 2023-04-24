@@ -1,4 +1,5 @@
-add thing you had with the servos to smooth changes in motor
 
-or
-robot thinks heading is zero when reality its drifting. so we might want to push robot to the right and then reset heading to be zero
+
+SO. 
+first need the thing with the stopping
+so lets do that should be easy

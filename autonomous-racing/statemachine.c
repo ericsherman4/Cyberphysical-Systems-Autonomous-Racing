@@ -8,10 +8,14 @@
 
 // https://coder-tronics.com/state-machine-tutorial-pt2/
 
+extern uint32_t uptime_ms;
+uint32_t start_time;
+
+
 states_e curr_state = BEGIN;
+states_e pre_crash_state = BEGIN;
 int32_t target_heading = 0;
 uint32_t command_status = 0;
-
 
 uint32_t ramp;
 uint8_t consistent_right = 0;
@@ -104,6 +108,11 @@ void upon_entry(states_e state)
             {
                 SoftLeftUntilThStart(target_heading);
             }
+            break;
+        case S_CRASH:
+            LaunchPad_Output(0);
+            start_time = uptime_ms;
+            Motor_Stop();
             break;
         case S_STOP:
             LaunchPad_Output(RED);
@@ -208,10 +217,15 @@ void StateMachine_Main_Run()
                     NX_STATE(curr_state);
                 }
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
             {
-                // error occurred 
-                // Motor_Stop();
+                // we crashed
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
+            {
+                //going wrong directon
                 NX_STATE(S_HALLWAY1_ALIGN);
             }
             else
@@ -230,12 +244,20 @@ void StateMachine_Main_Run()
                 //success, we are realigned, go back to driving forward
                 NX_STATE(S_HALLWAY1_STR);
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                // we crashed
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+                
+            }
+            else if(command_status == 255)
             {
                 // failed. rerun the state in case we turned to far.
                 // heading angles will redetermine what direction to turn in
                 upon_entry(curr_state);
                 NX_STATE(curr_state);
+
             }
             else
             {
@@ -252,7 +274,12 @@ void StateMachine_Main_Run()
                 Motor_Stop();
                 NX_STATE(S_HALLWAY2_STR);
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // failed might have turned too far
                 // go to align
@@ -278,7 +305,12 @@ void StateMachine_Main_Run()
                     NX_STATE(S_HALLWAY2_STR);
                 }
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // failed, align again
                 upon_entry(curr_state);
@@ -347,7 +379,12 @@ void StateMachine_Main_Run()
                     NX_STATE(curr_state);
                 }
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // error occurred 
                 // Motor_Stop();
@@ -420,7 +457,12 @@ void StateMachine_Main_Run()
                     NX_STATE(curr_state);
                 }
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // error occurred 
                 // Motor_Stop();
@@ -450,7 +492,12 @@ void StateMachine_Main_Run()
                 NX_STATE(S_HALLWAY3_STR);
 
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // failed might have turned too far
                 // go to align
@@ -469,7 +516,12 @@ void StateMachine_Main_Run()
                 //sucess, we are aligned
                 NX_STATE(S_HALLWAY3_STR);
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // failed, align again
                 upon_entry(curr_state);
@@ -538,7 +590,12 @@ void StateMachine_Main_Run()
                     NX_STATE(curr_state);
                 }
             }
-            else if(command_status > 1)
+            else if(command_status > 1 && command_status < 255)
+            {
+                pre_crash_state = curr_state;
+                NX_STATE(S_CRASH);
+            }
+            else if(command_status == 255)
             {
                 // error occurred 
                 // Motor_Stop();
@@ -551,6 +608,16 @@ void StateMachine_Main_Run()
             }
 
 
+        case S_CRASH:
+        
+            if((uptime_ms - start_time) >= 1000)
+            {
+                NX_STATE(pre_crash_state);
+            }
+            else
+            {
+                NX_STATE(curr_state);
+            }
 
         case S_STOP:
             // dead hang

@@ -14,6 +14,7 @@
 #include "pid.h"
 #include "statemachine.h"
 
+volatile uint32_t uptime_ms;
 
 //opt3101 stuff
 uint32_t Distances[3];
@@ -37,6 +38,9 @@ bool pollDistanceSensor(void)
 
 void SysTick_Handler()
 {
+    #ifdef MS_25_UPDATE
+        uptime_ms += 25;
+    #endif
     UpdatePosition();
 
     if(pollDistanceSensor())
@@ -64,8 +68,8 @@ void main(void)
     Blinker_Init();
     Odometry_Init(ODO_INIT_XPOS, ODO_INIT_YPOS, ODO_INIT_HEADING);
 
-
-    SysTick_Init_Ints(ODO_UPDATE_PERIOD, 4);
+    uptime_ms = 0;
+    SysTick_Init_Ints(SYSTICK_UPDATE, 4);
     EnableInterrupts(); //used for tach i think
 
 
