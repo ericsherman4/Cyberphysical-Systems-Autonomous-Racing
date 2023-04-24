@@ -216,22 +216,18 @@ void Forward(states_e state){
   Action = GOFORWARD;
   Blinker_Output(FR_LEFT+FR_RGHT);
   Display();
-  // if(state == S_HALLWAY2_STR)
-  // {
-  //    Motor_Forward(MOTORFAST,MOTORFAST+200);
-  // }
-  // else
-  // {
-  //   Motor_Forward(MOTORFAST,MOTORFAST);  // move
-  // }
+
 
   switch(state)
   {
     case S_HALLWAY2_STR:
       Motor_Forward(MOTORFAST,MOTORFAST+200);
       break;
+    case S_HALLWAY2_STR_END:
+      Motor_Forward(MOTORFAST,MOTORFAST);
+      break;
     case S_HALLWAY3_STR:
-      Motor_Forward(MOTORFAST+300,MOTORFAST);
+      Motor_Forward(MOTORFAST,MOTORFAST);
       break;
     default:
       Motor_Forward(MOTORFAST,MOTORFAST);
