@@ -555,21 +555,21 @@ void StateMachine_Main_Run()
                 NX_STATE(S_STOP);
             }
 
-            consistent_left = (Distances_local[0] < 500) ? (consistent_left+1) : 0;
-            consistent_right = (Distances_local[2] < 500) ? (consistent_right+1) : 0;
+            consistent_left = (Distances_local[0] < 700) ? (consistent_left+1) : 0;
+            consistent_right = (Distances_local[2] < 700) ? (consistent_right+1) : 0;
 
             if(consistent_right == 3)
             {
                 // make the robot think its more turned right than it is
-                Odometry_Init(MyX, MyY, -205);
-                consistent_right = 0;
+                Odometry_Init(MyX, MyY, -200);
+                // consistent_right = 0;
             }
 
             if(consistent_left == 3)
             {
                 // turn right a bit
-                Odometry_Init(MyX, MyY, 205);
-                consistent_left = 0;
+                Odometry_Init(MyX, MyY, 200);
+                // consistent_left = 0;
             }
 
             
