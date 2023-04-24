@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 #define NX_STATE(val) next_state=(val); break;
-#define STATE_AFTER_BEGIN S_HALLWAY3_STR
+#define STATE_AFTER_BEGIN S_HALLWAY1_STR
 
 // 1/48/10^6*700000 is 15ms update
 // 1/48/10^6*1200000 is 25ms update
