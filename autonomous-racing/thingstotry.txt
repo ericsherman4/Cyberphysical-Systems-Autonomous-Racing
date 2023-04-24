@@ -3,3 +3,5 @@
 SO. 
 first need the thing with the stopping
 so lets do that should be easy
+
+make systick run at 1ms and do a task manager

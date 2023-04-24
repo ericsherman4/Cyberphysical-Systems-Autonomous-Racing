@@ -207,7 +207,7 @@ void WaitUntilBumperTouched(void){uint32_t data;
   }while(data);
 }
 void StopUntilBumperTouched(void){
-  Motor_Stop();
+  Motor_Set_Target(M_STOP, 0, 0);
   Action = ISSTOPPED;
   Display();
   WaitUntilBumperTouched();
@@ -221,16 +221,16 @@ void Forward(states_e state){
   switch(state)
   {
     case S_HALLWAY2_STR:
-      Motor_Forward(MOTORFAST,MOTORFAST+200);
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST+300);
       break;
     case S_HALLWAY2_STR_END:
-      Motor_Forward(MOTORFAST,MOTORFAST);
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);
       break;
     case S_HALLWAY3_STR:
-      Motor_Forward(MOTORFAST,MOTORFAST);
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);
       break;
     default:
-      Motor_Forward(MOTORFAST,MOTORFAST);
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);
       break;
   }
 }
@@ -238,25 +238,25 @@ void HardLeft(void){
   Action = HARDLEFT;
   Blinker_Output(FR_LEFT+BK_LEFT);
   Display();
-  Motor_Left(MOTORTURNSPEED,MOTORTURNSPEED);  // left
+  Motor_Set_Target(M_LEFT,MOTORTURNSPEED,MOTORTURNSPEED);  // left
 }
 void HardRight(void){
   Action = HARDRIGHT;
   Blinker_Output(FR_RGHT+BK_RGHT);
   Display();
-  Motor_Right(MOTORTURNSPEED,MOTORTURNSPEED);  // right
+  Motor_Set_Target(M_RIGHT,MOTORTURNSPEED,MOTORTURNSPEED);  // right
 }
 void SoftLeft(void){
   Action = SOFTLEFT;
   Blinker_Output(FR_LEFT+BK_LEFT);
   Display();
-  Motor_Forward(MOTORSLOW,MOTORFAST);  // left
+  Motor_Set_Target(M_FORWARD,MOTORSLOW,MOTORFAST);  // left
 }
 void SoftRight(void){
   Action = SOFTRIGHT;
   Blinker_Output(FR_RGHT+BK_RGHT);
   Display();
-  Motor_Forward(MOTORFAST,MOTORSLOW);  // right
+  Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORSLOW);  // right
 }
 
 
@@ -470,7 +470,7 @@ uint32_t  ForwardUntilThStatus(void){uint32_t data;
 
 uint32_t CheckGoal(void){
   if(Goal==STOP){
-    Motor_Stop(); return 1;
+    Motor_Set_Target(M_STOP, 0, 0); return 1;
   }
   if(Goal==FORWARDTOX){
     return ForwardUntilXStatus();

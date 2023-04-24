@@ -112,11 +112,11 @@ void upon_entry(states_e state)
         case S_CRASH:
             LaunchPad_Output(0);
             start_time = uptime_ms;
-            Motor_Stop();
+            Motor_Set_Target(M_STOP, 0, 0);
             break;
         case S_STOP:
             LaunchPad_Output(RED);
-            Motor_Stop();
+            Motor_Set_Target(M_STOP, 0, 0);
             break;
         
     }
@@ -150,11 +150,11 @@ void StateMachine_Main_Run()
         case BEGIN:
             // default switch from begin to hallway1 straight so you can run its entry command
 
-            for(ramp=4000; ramp <= MOTORFAST; ramp+=100)
-            {
-                Motor_Forward(ramp,ramp);
-                Clock_Delay1ms(50);
-            }
+            // for(ramp=4000; ramp <= MOTORFAST; ramp+=100)
+            // {
+            //     Motor_Forward(ramp,ramp);
+            //     Clock_Delay1ms(50);
+            // }
             NX_STATE(S_HALLWAY1_STR);
         
         case S_HALLWAY1_STR:
@@ -193,7 +193,7 @@ void StateMachine_Main_Run()
             //  if (MyX > (DISTANCE_1FT*91) && (consistent_front == 4))
             //  if (MyX > (DISTANCE_1FT*90))
             {
-                Motor_Stop();
+                Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY1_TO2);
             }
 
@@ -203,7 +203,7 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 // success
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 // check if heading is too far off course
                 if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
                 {
@@ -271,7 +271,7 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 //sucess
-                Motor_Stop();
+                Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY2_STR);
             }
             else if(command_status > 1 && command_status < 255)
@@ -365,7 +365,7 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 // success
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 // check if heading is too far off course
                 if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
                 {
@@ -387,7 +387,7 @@ void StateMachine_Main_Run()
             else if(command_status == 255)
             {
                 // error occurred 
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY2_ALIGN);
             }
             else
@@ -413,7 +413,7 @@ void StateMachine_Main_Run()
             // if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
             if (MyY < (-(DISTANCE_1FT*120))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
             {
-                Motor_Stop();
+                Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY2_TO3);
             }
 
@@ -443,7 +443,7 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 // success
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 // check if heading is too far off course
                 if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
                 {
@@ -465,7 +465,7 @@ void StateMachine_Main_Run()
             else if(command_status == 255)
             {
                 // error occurred 
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY2_ALIGN);
             }
             else
@@ -488,7 +488,7 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 //sucess
-                Motor_Stop();
+                Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY3_STR);
 
             }
@@ -548,7 +548,7 @@ void StateMachine_Main_Run()
             // Check on X loc
             if (MyX > ((DISTANCE_1FT*91)))
             {
-                Motor_Stop();
+                Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_STOP);
             }
 
@@ -576,7 +576,7 @@ void StateMachine_Main_Run()
             if(command_status == 1)
             {
                 // success
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 // check if heading is too far off course
                 if(MyTheta > (300 + target_heading) || MyTheta < (target_heading - 300))
                 {
@@ -598,7 +598,7 @@ void StateMachine_Main_Run()
             else if(command_status == 255)
             {
                 // error occurred 
-                // Motor_Stop();
+                // Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY3_ALIGN);
             }
             else

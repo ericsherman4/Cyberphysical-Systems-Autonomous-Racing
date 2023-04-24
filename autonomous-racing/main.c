@@ -38,8 +38,11 @@ bool pollDistanceSensor(void)
 
 void SysTick_Handler()
 {
+    #ifdef MS_15_UPDATE
+        uptime_ms += 15;
+    #endif
     #ifdef MS_25_UPDATE
-        uptime_ms += 25;
+        uptime_ms +=25;
     #endif
     UpdatePosition();
 
@@ -48,8 +51,8 @@ void SysTick_Handler()
 
         channel = (channel+1)%3;
         OPT3101_StartMeasurementChannel(channel);
-
     }
+    Motor_Run();
 }
 
 void main(void)
@@ -71,6 +74,12 @@ void main(void)
     uptime_ms = 0;
     SysTick_Init_Ints(SYSTICK_UPDATE, 4);
     EnableInterrupts(); //used for tach i think
+
+    // Motor_Set_Target(M_FORWARD,8000,8000);
+    // Clock_Delay1ms(5000);
+    // Motor_Set_Target(M_FORWARD,3000,3000);
+    // Clock_Delay1ms(5000);
+    // Motor_Set_Target(M_STOP, 0,0 );
 
 
     while(1)

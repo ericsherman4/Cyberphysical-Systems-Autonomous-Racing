@@ -51,8 +51,60 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "CortexM.h" // is this needed?
 #include "Motor.h"
 #include "PWM.h"
+#include <Math.h>
 
 #define PWM_PERIOD_100_HZ 14998
+
+static Motor_t motors = {0};
+
+void Motor_Run(void)
+{
+  const float smoothed_pwmr = motors.fpwm_right*NEW_VAL_PERCENT + motors.prev_fpwm_right*OLD_VAL_PERCENT;
+  const float smoothed_pwml = motors.fpwm_left*NEW_VAL_PERCENT + motors.prev_fpwm_left*OLD_VAL_PERCENT;
+
+//  if(smoothed_pwml < 2500.0 && motors.fpwm_left < 1.0)
+//  {
+//    smoothed_pwml = 0.0f;
+//  }
+//
+//  if(smoothed_pwmr < 2500.0 && motors.fpwm_right < 1.0)
+//  {
+//    smoothed_pwmr = 0.0f;
+//  }
+
+  motors.prev_fpwm_right = smoothed_pwmr;
+  motors.prev_fpwm_left = smoothed_pwml;
+
+  switch(motors.command)
+  {
+    case M_FORWARD:
+      Motor_Forward((uint16_t)(round(smoothed_pwml)), (uint16_t)round(smoothed_pwmr));
+      break;
+    case M_RIGHT:
+      Motor_Right((uint16_t)round(smoothed_pwml), (uint16_t)round(smoothed_pwmr));
+      break;
+    case M_LEFT:
+      Motor_Left((uint16_t)round(smoothed_pwml), (uint16_t)round(smoothed_pwmr));
+      break;
+    case M_BACKWARD:
+      Motor_Backward((uint16_t)round(smoothed_pwml), (uint16_t)round(smoothed_pwmr));
+      break;
+    case M_STOP:
+      Motor_Stop();
+      motors.fpwm_left = 0;
+      motors.fpwm_right = 0;
+      motors.prev_fpwm_left = 0;
+      motors.prev_fpwm_right = 0;
+      break;
+  }
+}
+
+void Motor_Set_Target(Motor_Command_e command, uint16_t lpwm, uint16_t rpwm)
+{
+  motors.command = command;
+  motors.fpwm_left = (float)lpwm;
+  motors.fpwm_right = (float)rpwm;
+}
 
 // *******Lab 13 solution*******
 
