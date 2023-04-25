@@ -19,9 +19,9 @@
 
 unsigned long MilliTimer;
 
-void SysTick_Handler(void) {
-	MilliTimer++;
-}
+// void SysTick_Handler(void) {
+// 	MilliTimer++;
+// }
 
 char expired(Timer* timer) {
 	long left = timer->end_time - MilliTimer;
@@ -154,10 +154,10 @@ int TLSConnectNetwork(Network *n, char* addr, int port, SlSockSecureFiles_t* cer
 		}
 	}
 
-	SysTick_registerInterrupt(SysTick_Handler);
-	SysTick_setPeriod(48000);
-	SysTick_enableModule();
-	SysTick_enableInterrupt();
+	// SysTick_registerInterrupt(SysTick_Handler);
+	// SysTick_setPeriod(48000);
+	// SysTick_enableModule();
+	// SysTick_enableInterrupt();
 
 	return retVal;
 }
@@ -190,10 +190,10 @@ _i32 ConnectNetwork(Network* n, char* addr, int port)
 	    return retVal;
 	}
 
-	SysTick_registerInterrupt(SysTick_Handler);
-	SysTick_setPeriod(48000);
-	SysTick_enableModule();
-	SysTick_enableInterrupt();
+	// SysTick_registerInterrupt(SysTick_Handler);
+	// SysTick_setPeriod(48000);
+	// SysTick_enableModule();
+	// SysTick_enableInterrupt();
 
 	return retVal;
 }
