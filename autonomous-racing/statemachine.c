@@ -193,7 +193,7 @@ void StateMachine_Main_Run()
 
             // Check on X loc
         //    if(MyX > (DISTANCE_1FT*10) && consistent_front == 3)
-             if (MyX > (DISTANCE_1FT*91) && (consistent_front == 3))
+             if (HALLWAY1_STR_CHK && (consistent_front == 1))
             {
                 Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY1_TO2);
@@ -336,7 +336,7 @@ void StateMachine_Main_Run()
                 LaunchPad_LED(0);
             }
 
-            if(MyY < (-(DISTANCE_1FT*105)))
+            if(HALLWAY2_END_CHK)
             // if(MyY < -(DISTANCE_1FT*5))
             {
                 reached_end_hw2 = true;
@@ -413,7 +413,7 @@ void StateMachine_Main_Run()
 
             // Check on Y loc
             // if(MyY < (-(DISTANCE_1FT*18))) //placed robot facing mechanical closet, with robot aligned with back of the bench
-            if (MyY < (-(DISTANCE_1FT*120))) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
+            if (HALLWAY2_STR_END_CHK) // THIS DISTANCE IS PERF, aligned with left side of the bathroom door? 
             {
                 Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_HALLWAY2_TO3);
@@ -548,7 +548,7 @@ void StateMachine_Main_Run()
 
 
             // Check on X loc
-            if (MyX > ((DISTANCE_1FT*91)))
+            if (HALLWAY3_END_CHK)
             {
                 Motor_Set_Target(M_STOP, 0, 0);
                 NX_STATE(S_STOP);
