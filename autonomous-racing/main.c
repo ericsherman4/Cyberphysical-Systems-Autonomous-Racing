@@ -588,7 +588,6 @@ void main(void)
 
     MQTTSubscribe(&hMQTTClient, uniqueID, QOS0, messageArrived);
 
-    uint32_t test = 0;
 
     pubReset();
     #endif
@@ -614,9 +613,12 @@ void main(void)
 
     StateMachine_Store_Distances(Distances);
 
-    char uart_command = 'g';
+    char uart_command = 0;
 
-    uint32_t dummy_delay = 0;
+    uint32_t start_time = uptime_ms;
+    uint16_t RPM_L = 0;
+    uint16_t RPM_R = 0;
+    uint16_t get_L = 0, get_R = 0;
 
     while(1)
     {
@@ -635,19 +637,27 @@ void main(void)
         }
         // Systick handler is currently running
 
-        if(++dummy_delay == 100000)
+        if((uptime_ms - start_time) > 1000)
         {
-            ++test;
+
             #ifdef USE_WIFI
-            pubLeftWheelSpeed(test);
-            pubRightWheelSpeed(test);
-            pubRightDistanceSensor(test);
-            pubLeftDistanceSensor(test);
-            pubCenterDistanceSensor(test);
-            pubXPosition(test);
-            pubYPosition(test);
-            pubHeading(test);
-            dummy_delay = 0;
+
+            //Sense state of wheels (in RPM) and take the average of the last n values
+            // (1/tach step/cycles) * (12,000,000 cycles/sec) * (60 sec/min) * (1/360 rotation/step)
+            Odometry_Update_GUI(&get_L, &get_R);
+
+            RPM_L = 2000000/get_L;
+            RPM_R = 2000000/get_R;
+
+            pubLeftWheelSpeed(RPM_L);
+            pubRightWheelSpeed(RPM_R);
+            pubRightDistanceSensor(Distances[2]);
+            pubLeftDistanceSensor(Distances[0]);
+            pubCenterDistanceSensor(Distances[1]);
+            pubXPosition(MyX);
+            pubYPosition(MyY);
+            pubHeading(MyTheta);
+            start_time = uptime_ms;
             #endif
         }
     }

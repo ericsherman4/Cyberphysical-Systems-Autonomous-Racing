@@ -66,6 +66,8 @@ int32_t dz;     // change in distance 0.0001
 
 #define w2 (W/2) // used for rounding
 
+
+
 void Odometry_Init(int32_t initx, int32_t inity, int32_t initTheta){
   Robotx =initx;
   Roboty = inity;
@@ -163,6 +165,13 @@ int32_t MyX,MyY;               // position in 0.0001cm
 int32_t MyTheta;               // direction units 2*pi/16384 radians (-pi to +pi)
 int32_t Error; // in 0.0001cm or in 2*pi/16384 radians
 
+
+
+void Odometry_Update_GUI(uint16_t *in_lefttach, uint16_t *in_righttach)
+{
+   *in_lefttach = LeftTach;
+   *in_righttach = RightTach;
+}
 
 
 int32_t abs(int32_t in){ // absolute value

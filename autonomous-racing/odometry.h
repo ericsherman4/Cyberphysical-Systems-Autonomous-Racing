@@ -76,6 +76,10 @@ policies, either expressed or implied, of the FreeBSD Project.
 extern int32_t MyX,MyY;
 extern int32_t MyTheta;  
 
+
+
+void Odometry_Update_GUI(uint16_t *in_lefttach, uint16_t *in_righttach);
+
 /**
  * Initialize odometry module by specifying the initial position/angle of the robot.
  * Angles range from (-pi to +pi) signified by -8192 to +8191.
