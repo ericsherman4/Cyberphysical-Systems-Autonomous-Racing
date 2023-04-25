@@ -71,7 +71,9 @@ void Odometry_Init(int32_t initx, int32_t inity, int32_t initTheta){
   Roboty = inity;
   Robottheta = initTheta;
 }
-void Odometry_Update(int32_t LCount, int32_t RCount){int32_t L2; int32_t absLr,absRr;
+void Odometry_Update(int32_t LCount, int32_t RCount){
+  int32_t L2; 
+  int32_t absLr,absRr;
   Lr = (LCount*C)/N;      // 0.0001cm
   Rr = (RCount*C)/N;      // 0.0001cm
   if(Lr>=0){
@@ -205,53 +207,74 @@ void WaitUntilBumperTouched(void){uint32_t data;
   }while(data);
 }
 void StopUntilBumperTouched(void){
-  Motor_Stop();
+  Motor_Set_Target(M_STOP, 0, 0);
   Action = ISSTOPPED;
   Display();
   WaitUntilBumperTouched();
 }
-void Forward(void){
+void Forward(states_e state){
   Action = GOFORWARD;
   Blinker_Output(FR_LEFT+FR_RGHT);
   Display();
-  Motor_Forward(MOTORFAST,MOTORFAST);  // move
+
+
+  switch(state)
+  {
+    case S_HALLWAY2_STR:
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST+300);
+      break;
+    case S_HALLWAY2_STR_END:
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);
+      break;
+    case S_HALLWAY3_STR:
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);
+      break;
+    default:
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);
+      break;
+  }
 }
 void HardLeft(void){
   Action = HARDLEFT;
   Blinker_Output(FR_LEFT+BK_LEFT);
   Display();
-  Motor_Left(MOTORSLOW,MOTORSLOW);  // left
+  Motor_Set_Target(M_LEFT,MOTORTURNSPEED,MOTORTURNSPEED);  // left
 }
 void HardRight(void){
   Action = HARDRIGHT;
   Blinker_Output(FR_RGHT+BK_RGHT);
   Display();
-  Motor_Right(MOTORSLOW,MOTORSLOW);  // right
+  Motor_Set_Target(M_RIGHT,MOTORTURNSPEED,MOTORTURNSPEED);  // right
 }
 void SoftLeft(void){
   Action = SOFTLEFT;
   Blinker_Output(FR_LEFT+BK_LEFT);
   Display();
-  Motor_Forward(0,MOTORSLOW);  // left
+  Motor_Set_Target(M_FORWARD,MOTORSLOW,MOTORFAST);  // left
 }
 void SoftRight(void){
   Action = SOFTRIGHT;
   Blinker_Output(FR_RGHT+BK_RGHT);
   Display();
-  Motor_Forward(MOTORSLOW,0);  // right
+  Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORSLOW);  // right
 }
-uint32_t ForwardUntilCrash(void){uint32_t data;
-  Forward();
+
+
+uint32_t ForwardUntilCrash(void){
+  uint32_t data;
+  Forward(BEGIN);
   do{// wait for touch
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
   }while(data==0);
   return data; // reason for stopping
 }
-uint32_t ForwardUntilX(int32_t desiredX){uint32_t data;
+
+uint32_t ForwardUntilX(int32_t desiredX){
+  uint32_t data;
   int32_t goal;  // in 0.0001cm
   int32_t lastgoal=abs(desiredX-MyX);  // in 0.0001cm
   int32_t badCount = 10;
-  Forward();
+  Forward(BEGIN);
   do{// wait for touch or X position
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
     Error = desiredX-MyX;   // in 0.0001cm
@@ -267,17 +290,19 @@ uint32_t ForwardUntilX(int32_t desiredX){uint32_t data;
   Display();
   return data; // reason for stopping, 0 means success
 }
+
+
 int32_t goal;      // in 0.0001cm
 int32_t lastgoal;  // in 0.0001cm
 int32_t badCount;
 int32_t desiredX,desiredY,desiredTh;
 enum OdometryCommand Goal; // stopped
-void ForwardUntilXStart(int32_t thedesiredX){
+void ForwardUntilXStart(int32_t thedesiredX, states_e state){
   desiredX = thedesiredX;
   lastgoal=abs(desiredX-MyX);  // in 0.0001cm
   badCount = 10;
   Goal = FORWARDTOX;
-  Forward();
+  Forward(state);
 }
 // true if done or error
 // false if still running ok
@@ -295,11 +320,12 @@ uint32_t ForwardUntilXStatus(void){uint32_t data;
   lastgoal = goal;
   return (goal<XYTOLERANCE); // true if close enough
 }
-uint32_t ForwardUntilY(int32_t desiredY){uint32_t data;
+uint32_t ForwardUntilY(int32_t desiredY){
+  uint32_t data;
   int32_t goal;  // in 0.0001cm
   int32_t lastgoal=abs(desiredY-MyY);  // in 0.0001cm
   int32_t badCount = 10;
-  Forward();
+  Forward(BEGIN);
   do{// wait for touch or Y position
     data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
     Error = desiredY-MyY;   // in 0.0001cm
@@ -315,12 +341,12 @@ uint32_t ForwardUntilY(int32_t desiredY){uint32_t data;
   Display();
   return data; // reason for stopping, 0 means success
 }
-void ForwardUntilYStart(int32_t thedesiredY){
+void ForwardUntilYStart(int32_t thedesiredY, states_e state){
   desiredY = thedesiredY;
   badCount = 10;
   lastgoal=abs(desiredY-MyY);  // in 0.0001cm
   Goal = FORWARDTOY;
-  Forward();
+  Forward(state);
 }
 // true if done or error
 // false if still running ok
@@ -339,7 +365,8 @@ uint32_t ForwardUntilYStatus(void){uint32_t data;
   return (goal<XYTOLERANCE);
 }
 
-uint32_t SoftLeftUntilTh(int32_t desiredTh){uint32_t data;
+uint32_t SoftLeftUntilTh(int32_t desiredTh){
+  uint32_t data;
   int32_t goal;  // in 2*pi/16384 radians
   int32_t badCount = 10;
   int32_t lastgoal=abs(desiredTh-MyTheta);  // in 2*pi/16384 radians
@@ -362,6 +389,31 @@ uint32_t SoftLeftUntilTh(int32_t desiredTh){uint32_t data;
   return data; // reason for stopping, 0 means success
 }
 
+uint32_t SoftRightUntilTh(int32_t desiredTh)
+{
+    uint32_t data;
+    int32_t goal;  // in 2*pi/16384 radians
+    int32_t badCount = 10;
+    int32_t lastgoal=abs(desiredTh-MyTheta);  // in 2*pi/16384 radians
+    SoftRight();
+    do{// wait for touch or Th position
+      data = Bump_Read()+(LaunchPad_Input()<<6); // 8 bit switch inputs
+      Error = desiredTh-MyTheta;   // in 2*pi/16384 radians
+      if(Error >= PI)Error = Error-TWOPI;  // -8192 to +8191
+      if(Error < -PI)Error = Error+TWOPI;  // -8192 to +8191
+      goal = abs(Error);           // in 2*pi/16384 radians
+      if(goal > lastgoal){         // missed it, going wrong way??
+        badCount--;
+        if(badCount<=0){
+          data = 0xFF; // wrong way
+        }
+      }
+      lastgoal = goal;
+    }while((data==0)&&(goal>THETATOLERANCE));
+    Display();
+    return data; // reason for stopping, 0 means success
+}
+
 void SoftLeftUntilThStart(int32_t thedesiredTh){
   desiredTh = thedesiredTh;
   badCount = 10;
@@ -369,6 +421,34 @@ void SoftLeftUntilThStart(int32_t thedesiredTh){
   Goal = LEFTTOTH;
   SoftLeft();
 }
+
+void SoftRightUntilThStart(int32_t thedesiredTh)
+{
+  desiredTh = thedesiredTh;
+  badCount = 10;
+  lastgoal=abs(thedesiredTh-MyTheta);  // in 2*pi/16384 radians
+  Goal = RIGHTTOTH;
+  SoftRight();
+}
+
+
+void HardLeftUntilThStart(int32_t thedesiredTh){
+  desiredTh = thedesiredTh;
+  badCount = 10;
+  lastgoal=abs(thedesiredTh-MyTheta);  // in 2*pi/16384 radians
+  Goal = LEFTTOTH;
+  HardLeft();
+}
+
+void HardRightUntilThStart(int32_t thedesiredTh)
+{
+  desiredTh = thedesiredTh;
+  badCount = 10;
+  lastgoal=abs(thedesiredTh-MyTheta);  // in 2*pi/16384 radians
+  Goal = RIGHTTOTH;
+  HardRight();
+}
+
 // true if done or error
 // false if still running ok
 uint32_t  ForwardUntilThStatus(void){uint32_t data;
@@ -390,7 +470,7 @@ uint32_t  ForwardUntilThStatus(void){uint32_t data;
 
 uint32_t CheckGoal(void){
   if(Goal==STOP){
-    Motor_Stop(); return 1;
+    Motor_Set_Target(M_STOP, 0, 0); return 1;
   }
   if(Goal==FORWARDTOX){
     return ForwardUntilXStatus();

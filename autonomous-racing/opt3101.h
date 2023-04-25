@@ -66,6 +66,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include <stdint.h>
 #include <stdbool.h>
 
+void Distance_Sensor_Init(uint8_t start_channel);
+
 /**
  * Resets the OPT3101 distance sensor using its reset line and then waits for
  * it to be done loading its initial settings from the on-board EEPROM memory.

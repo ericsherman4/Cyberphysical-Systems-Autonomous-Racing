@@ -56,6 +56,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #ifndef _ODOMETRY_H_
 #define _ODOMETRY_H_
 #include <stdint.h>
+#include "statemachine.h"
+
 #define N 360     ///< counts/rotation, just one edge of one tach
 #define D 70000   ///< wheel diameter 0.0001cm
 #define W 140000  ///< wheel base 0.0001 cm
@@ -68,8 +70,11 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define WEST -8192   ///< direction that is west
 #define XYTOLERANCE 10000      ///< tolerance in x,y goal seeking, 1 cm
 #define THETATOLERANCE (4096/90)  ///< tolerance in angle goal seeking, 1 deg
-#define MOTORFAST 14998
-#define MOTORSLOW 3000
+
+
+
+extern int32_t MyX,MyY;
+extern int32_t MyTheta;  
 
 /**
  * Initialize odometry module by specifying the initial position/angle of the robot.
@@ -223,11 +228,22 @@ uint32_t ForwardUntilY(int32_t desiredY);
 /**
  * Odometry command to soft left until theta goal has been reached.
  * This routine will run until goal is met.
+ * This will only work if the currentTheta is LESS than desired theta
  * @param desiredTh desired theta position in units of 2*pi/16384 radians
  * @return 0 for success, nonzero is failure (crash=bump sensor or 0xFF=going wrong way)
  * @brief Soft Left Until Theta
  */
 uint32_t SoftLeftUntilTh(int32_t desiredTh);
+
+/**
+ * Odometry command to soft right until theta goal has been reached.
+ * This routine will run until goal is met.
+ * This will only work if the currentTheta is GREATER THAN desired theta
+ * @param desiredTh desired theta position in units of 2*pi/16384 radians
+ * @return 0 for success, nonzero is failure (crash=bump sensor or 0xFF=going wrong way)
+ * @brief Soft Right Until Theta
+ */
+uint32_t SoftRightUntilTh(int32_t desiredTh);
 
 
 /**
@@ -237,7 +253,7 @@ uint32_t SoftLeftUntilTh(int32_t desiredTh);
  * @return none
  * @brief start going Forward Until X
  */
-void ForwardUntilXStart(int32_t thedesiredX);
+void ForwardUntilXStart(int32_t thedesiredX, states_e state);
 
 /**
  * Odometry command to check status of Go straight until X command.
@@ -254,7 +270,7 @@ uint32_t ForwardUntilXStatus(void);
  * @return none
  * @brief start going Forward Until Y
  */
-void ForwardUntilYStart(int32_t thedesiredY);
+void ForwardUntilYStart(int32_t thedesiredY, states_e state);
 
 /**
  * Odometry command to check status of Go straight until Y command.
@@ -270,12 +286,25 @@ uint32_t ForwardUntilYStatus(void);
  * This routine will start the command, but return immediately
  * @param thedesiredTh desired theta position in units of 2*pi/16384 radians
  * @return none
- * @brief start going Forward Until Y
+ * @brief start going Forward Until theta
  */
 void SoftLeftUntilThStart(int32_t thedesiredTh);
 
 /**
- * Odometry command to check status of soft left until theta  command.
+ * Odometry command to soft right until theta goal has been reached.
+ * This routine will start the command, but return immediately
+ * @param thedesiredTh desired theta position in units of 2*pi/16384 radians
+ * @return none
+ * @brief start going Forward Until theta
+ */
+void SoftRightUntilThStart(int32_t thedesiredTh);
+
+void HardLeftUntilThStart(int32_t thedesiredTh);
+
+void HardRightUntilThStart(int32_t thedesiredTh);
+
+/**
+ * Odometry command to check status of soft left until theta or soft right or hard right or hard left command.
  * Assumes SoftLeftUntilThStart has been issued
  * @param none
  * @return true if done or error, false if still running ok

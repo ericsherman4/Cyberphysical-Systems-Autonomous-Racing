@@ -107,6 +107,9 @@
 							<tool id="com.ti.ccstudio.buildDefinitions.MSP432_20.2.hex.729894109" name="Arm Hex Utility" superClass="com.ti.ccstudio.buildDefinitions.MSP432_20.2.hex.77463525"/>
 						</toolChain>
 					</folderInfo>
+					<sourceEntries>
+						<entry excluding="Automatic_Stop.c" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+					</sourceEntries>
 				</configuration>
 			</storageModule>
 			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

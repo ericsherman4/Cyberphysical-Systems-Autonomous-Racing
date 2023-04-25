@@ -69,6 +69,33 @@ policies, either expressed or implied, of the FreeBSD Project.
 
 // *******Lab 13 solution*******
 
+typedef enum motor_commands {
+  M_STOP,
+  M_FORWARD,
+  M_RIGHT,
+  M_LEFT,
+  M_BACKWARD
+} Motor_Command_e;
+
+
+typedef struct
+{
+  // uint16_t ipwm_left;
+  // uint16_t ipwm_right_int;
+  float fpwm_left;
+  float fpwm_right;
+  float prev_fpwm_left;
+  float prev_fpwm_right;
+  Motor_Command_e command;
+} Motor_t;
+
+#define NEW_VAL_PERCENT (0.30f)
+#define OLD_VAL_PERCENT (1.0f-NEW_VAL_PERCENT)
+
+// filter
+void Motor_Run(void);
+void Motor_Set_Target(Motor_Command_e command, uint16_t lpwm, uint16_t rpwm);
+
 /**
  * Initialize GPIO pins for output, which will be
  * used to control the direction of the motors and
