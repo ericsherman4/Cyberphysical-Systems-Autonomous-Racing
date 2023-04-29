@@ -27,6 +27,11 @@ uint8_t consistent_front = 0;
 
 bool reached_end_hw2 = false;
 
+void StateMachine_Get_State(states_e *state)
+{
+    *state = curr_state;
+}
+
 void StateMachine_Store_Distances(uint32_t * distances)
 {
     Distances_local = distances;

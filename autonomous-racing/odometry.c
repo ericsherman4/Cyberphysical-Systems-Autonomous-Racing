@@ -229,8 +229,11 @@ void Forward(states_e state){
 
   switch(state)
   {
+    case S_HALLWAY1_STR:
+      Motor_Set_Target(M_FORWARD,MOTORFAST+200,MOTORFAST);
+      break;
     case S_HALLWAY2_STR:
-      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST+300);
+      Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST+450);
       break;
     case S_HALLWAY2_STR_END:
       Motor_Set_Target(M_FORWARD,MOTORFAST,MOTORFAST);

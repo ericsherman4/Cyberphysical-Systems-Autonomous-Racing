@@ -620,6 +620,8 @@ void main(void)
     uint16_t RPM_R = 0;
     uint16_t get_L = 0, get_R = 0;
 
+    states_e current_state = BEGIN;
+
     while(1)
     {
         if((EUSCI_A0->IFG&0x01) != 0)
@@ -646,6 +648,9 @@ void main(void)
             // (1/tach step/cycles) * (12,000,000 cycles/sec) * (60 sec/min) * (1/360 rotation/step)
             Odometry_Update_GUI(&get_L, &get_R);
 
+            StateMachine_Get_State(&current_state);
+
+
             RPM_L = 2000000/get_L;
             RPM_R = 2000000/get_R;
 
@@ -657,6 +662,14 @@ void main(void)
             pubXPosition(MyX);
             pubYPosition(MyY);
             pubHeading(MyTheta);
+            if(current_state == S_CRASH)
+            {
+                pubBumpStatus(1);
+            } else
+            {
+                pubBumpStatus(0);
+            }
+
             start_time = uptime_ms;
             #endif
         }

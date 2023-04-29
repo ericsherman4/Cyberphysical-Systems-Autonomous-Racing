@@ -8,8 +8,8 @@
 #define STATE_AFTER_BEGIN S_HALLWAY1_STR
 
 #define HALLWAY1_STR_CHK (MyX > (DISTANCE_1FT*91))
-#define HALLWAY2_END_CHK (MyY < (-(DISTANCE_1FT*111)))
-#define HALLWAY2_STR_END_CHK (MyY < (-(DISTANCE_1FT*126)))
+#define HALLWAY2_END_CHK (MyY < (-(DISTANCE_1FT*110)))
+#define HALLWAY2_STR_END_CHK (MyY < (-(DISTANCE_1FT*120)))
 #define HALLWAY3_END_CHK (MyX > ((DISTANCE_1FT*91)))
 
 // 1/48/10^6*700000 is 15ms update
@@ -20,8 +20,8 @@
 //#define MS_15_UPDATE 700000
 #define SYSTICK_UPDATE MS_25_UPDATE
 
-#define MOTORFAST 8000
-#define MOTORSLOW 6000
+#define MOTORFAST 7000
+#define MOTORSLOW 5200
 #define MOTORTURNSPEED 2200
 
 #define ODO_INIT_XPOS 0 
@@ -46,6 +46,7 @@ typedef enum states {
     S_STOP
 } states_e;
 
+void StateMachine_Get_State(states_e *state);
 
 void StateMachine_Store_Distances(uint32_t * distances);
 void upon_entry(states_e state);
